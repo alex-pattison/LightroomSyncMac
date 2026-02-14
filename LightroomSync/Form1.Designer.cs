@@ -1,4 +1,4 @@
-﻿namespace LightroomSync
+namespace LightroomSync
 {
     partial class Form1
     {
@@ -13,9 +13,10 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing)
             {
-                components.Dispose();
+                _trayIconBitmap?.Dispose();
+                components?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -56,6 +57,7 @@
             // label1
             // 
             label1.AutoSize = true;
+            label1.ForeColor = Color.WhiteSmoke;
             label1.Location = new Point(14, 52);
             label1.Name = "label1";
             label1.Size = new Size(90, 20);
@@ -65,6 +67,8 @@
             // 
             // localFolderTextBox
             // 
+            localFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
+            localFolderTextBox.ForeColor = Color.WhiteSmoke;
             localFolderTextBox.Location = new Point(14, 76);
             localFolderTextBox.Margin = new Padding(3, 4, 3, 4);
             localFolderTextBox.Name = "localFolderTextBox";
@@ -75,6 +79,7 @@
             // label2
             // 
             label2.AutoSize = true;
+            label2.ForeColor = Color.WhiteSmoke;
             label2.Location = new Point(14, 132);
             label2.Name = "label2";
             label2.Size = new Size(111, 20);
@@ -83,17 +88,20 @@
             // 
             // networkFolderTextBox
             // 
+            networkFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
+            networkFolderTextBox.ForeColor = Color.WhiteSmoke;
             networkFolderTextBox.Location = new Point(14, 156);
             networkFolderTextBox.Margin = new Padding(3, 4, 3, 4);
             networkFolderTextBox.Name = "networkFolderTextBox";
             networkFolderTextBox.Size = new Size(865, 27);
             networkFolderTextBox.TabIndex = 3;
-            networkFolderTextBox.Text = "P:\\Lightroom";
+            networkFolderTextBox.Text = "";
             networkFolderTextBox.TextChanged += networkFolderTextBox_TextChanged;
             // 
             // label3
             // 
             label3.AutoSize = true;
+            label3.ForeColor = Color.WhiteSmoke;
             label3.Location = new Point(14, 219);
             label3.Name = "label3";
             label3.Size = new Size(51, 20);
@@ -102,6 +110,8 @@
             // 
             // eventsTextBox
             // 
+            eventsTextBox.BackColor = Color.FromArgb(45, 45, 45);
+            eventsTextBox.ForeColor = Color.WhiteSmoke;
             eventsTextBox.Location = new Point(14, 243);
             eventsTextBox.Margin = new Padding(3, 4, 3, 4);
             eventsTextBox.Multiline = true;
@@ -146,6 +156,8 @@
             menuStrip1.Size = new Size(914, 30);
             menuStrip1.TabIndex = 10;
             menuStrip1.Text = "menuStrip1";
+            menuStrip1.BackColor = Color.FromArgb(45, 45, 45);
+            menuStrip1.ForeColor = Color.WhiteSmoke;
             // 
             // fileToolStripMenuItem
             // 
@@ -235,7 +247,9 @@
             MainMenuStrip = menuStrip1;
             Margin = new Padding(3, 4, 3, 4);
             Name = "Form1";
-            Text = "Lightroom Sync";
+            Text = "Lightroom Sync - DEV";
+            BackColor = Color.FromArgb(64, 64, 64);
+            ForeColor = Color.WhiteSmoke;
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             menuStrip1.ResumeLayout(false);

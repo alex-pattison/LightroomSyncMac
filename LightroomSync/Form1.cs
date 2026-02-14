@@ -28,6 +28,7 @@ namespace LightroomSync
 
         private NotifyIcon trayIcon;
         private ContextMenuStrip trayMenu;
+        private Bitmap? _trayIconBitmap; // Kept alive so tray icon HICON remains valid
 
 
         // Struct representing FLASHWINFO
@@ -252,8 +253,19 @@ namespace LightroomSync
 
             // Create the NotifyIcon instance
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "LightroomSync";
-            trayIcon.Icon = new Icon(GetType(), "camera.ico");
+            trayIcon.Text = "LightroomSync - DEV";
+            var stream = GetType().Assembly.GetManifestResourceStream("LightroomSync.camera_dev.png");
+            if (stream != null)
+            {
+                _trayIconBitmap = new Bitmap(stream);
+                var icon = Icon.FromHandle(_trayIconBitmap.GetHicon());
+                trayIcon.Icon = icon;
+                this.Icon = icon; // Window title bar too
+            }
+            else
+            {
+                trayIcon.Icon = SystemIcons.Application;
+            }
 
             // Create a context menu for the tray icon
             trayMenu = new ContextMenuStrip();
@@ -307,12 +319,14 @@ namespace LightroomSync
             await UploadCatalogs();
         }
 
+        private const string ConfigFileName = "config-dev.txt"; // Separate from prod config
+
         private void Form1_Load(object sender, EventArgs e)
         {
-            if (File.Exists("config.txt"))
+            if (File.Exists(ConfigFileName))
             {
 
-                string jsonContent = File.ReadAllText("config.txt");
+                string jsonContent = File.ReadAllText(ConfigFileName);
                 try
                 {
                     Config? loadedConfig = JsonConvert.DeserializeObject<Config>(jsonContent);
@@ -362,20 +376,19 @@ namespace LightroomSync
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            string filePath = "config.txt";
-            File.WriteAllText(filePath, config.ToJson());
+            File.WriteAllText(ConfigFileName, config.ToJson());
         }
 
         private void localFolderTextBox_TextChanged(object sender, EventArgs e)
         {
             if (Directory.Exists(localFolderTextBox.Text))
             {
-                localFolderTextBox.BackColor = Color.White;
+                localFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
                 config.LocalFolder = localFolderTextBox.Text;
             }
             else
             {
-                localFolderTextBox.BackColor = Color.LightPink;
+                localFolderTextBox.BackColor = Color.FromArgb(80, 45, 45);
             }
         }
 
@@ -383,12 +396,12 @@ namespace LightroomSync
         {
             if (Directory.Exists(networkFolderTextBox.Text))
             {
-                networkFolderTextBox.BackColor = Color.White;
+                networkFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
                 config.NetworkFolder = networkFolderTextBox.Text;
             }
             else
             {
-                networkFolderTextBox.BackColor = Color.LightPink;
+                networkFolderTextBox.BackColor = Color.FromArgb(80, 45, 45);
             }
         }
 

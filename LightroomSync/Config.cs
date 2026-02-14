@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,8 +15,9 @@ namespace LightroomSync
         public bool AutoCheckForUpdates { get; set; }
 
         public Config() { 
-            this.LocalFolder = "C:\\Users\\" + System.Environment.UserName + "\\Pictures\\Lightroom";
-            this.NetworkFolder = "P:\\Lightroom";
+            // DEV build: empty paths so prod catalog is never touched
+            this.LocalFolder = "";
+            this.NetworkFolder = "";
             this.AutoCheckForUpdates = true;
         }
         

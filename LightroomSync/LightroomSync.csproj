@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -14,33 +14,16 @@
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>1.0.0</FileVersion>
     <PackageIcon></PackageIcon>
-    <ApplicationIcon>camera.ico</ApplicationIcon>
+    <!-- ApplicationIcon commented out - add camera.ico to project to enable -->
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="camera.ico" />
     <None Remove="checkmark.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <WrapperTool>tlbimp</WrapperTool>
-      <VersionMinor>0</VersionMinor>
-      <VersionMajor>1</VersionMajor>
-      <Guid>f935dc20-1cf0-11d0-adb9-00c04fd58a0b</Guid>
-      <Lcid>0</Lcid>
-      <Isolated>false</Isolated>
-      <EmbedInteropTypes>true</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="camera.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="camera.ico" />
     <EmbeddedResource Include="checkmark.png" />
+    <EmbeddedResource Include="camera_dev.png" />
   </ItemGroup>
 
   <ItemGroup>
