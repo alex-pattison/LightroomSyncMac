@@ -104,7 +104,7 @@ namespace LightroomSync
                 {
                     string filePath = config.NetworkFolder + "\\status.txt";
                     File.WriteAllText(filePath, status.ToJson());
-                    Log("Updated status file");
+                    Log("Updated sync status on network.");
                 }
                 catch (Exception ex)
                 {
@@ -184,7 +184,7 @@ namespace LightroomSync
         {
             if (Status.LightroomIsOpen())
             {
-                Log("ERROR: Lightroom is open, cannot save to network drive");
+                Log("Lightroom is open — close it to sync to the network.");
                 return;
             }
 
@@ -200,7 +200,7 @@ namespace LightroomSync
             }
             else
             {
-                Log("Network status file says it's not safe to proceed! Something has gone wrong, or another catalog sync is happening!");
+                Log("Another machine may be syncing. Wait or check the network status.");
                 return;
             }
 
@@ -231,12 +231,12 @@ namespace LightroomSync
                 DateTime lastModified = File.GetLastWriteTime(file);
                 string customFormat = catName + " - " + lastModified.ToString("yyyy-MM-dd HH-mm") + ".zip";
 
-                Log("Zipping " + catName);
+                Log($"Preparing {catName} for upload...");
                 try
                 {
                     await ZipFilesAndFolders(customFormat, filesToZip, foldersToZip);
                     status.MostRecentVersions.Add(customFormat);
-                    Log("Files and folders have been zipped successfully.");
+                    Log($"Compressed {catName}.");
                 }
                 catch (Exception ex)
                 {
@@ -244,11 +244,11 @@ namespace LightroomSync
                     return;
                 }
 
-                Log("Moving " + customFormat + " to " + config.NetworkFolder);
+                Log($"Uploading {catName} to sync folder...");
                 try
                 {
                     await Task.Run(() => { File.Move(customFormat, config.NetworkFolder + "\\" + customFormat, true); });
-                    Log(customFormat + " moved successfully.");
+                    Log($"Uploaded {catName}.");
                 }
                 catch (IOException ex)
                 {
@@ -266,7 +266,9 @@ namespace LightroomSync
                 Log(ex.Message);
                 return;
             }
-            Log("Sucessfully updated all " + files.Length.ToString() + " catalog(s) to network share.");
+            config.LastSyncTime = DateTime.Now;
+            RefreshLastSyncDisplay();
+            Log($"Upload complete — {files.Length} catalog(s) synced.");
         }
 
         public Form1(bool startMinimized)
@@ -366,6 +368,12 @@ namespace LightroomSync
 
             status.LastUser = Environment.MachineName;
 
+            // Pull last sync time from status file if we have no local record or network is newer
+            TryUpdateLastSyncFromStatusFile();
+
+            RefreshCatalogDisplay();
+            RefreshLastSyncDisplay();
+
             if (Utils.ShortcutExistsInStartupFolder())
                 launchAtStartupToolStripMenuItem.Image = Resources.checkmark;
 
@@ -377,11 +385,15 @@ namespace LightroomSync
         {
             if (timer1.Enabled)
             {
-                // Stop sync
                 timer1.Enabled = false;
+                lightroomCheckTimer.Enabled = false;
                 buttonStartSync.Text = "Start Sync";
-                statusLabel.Text = "Idle";
-                Log("Sync monitoring stopped.");
+                buttonStartSync.Enabled = true;
+                buttonStartSync.BackColor = StopSyncAccent;
+                buttonStartSync.ForeColor = Color.White;
+                toolTip.SetToolTip(buttonStartSync, "");
+                SetStatus("Idle");
+                Log("Stopped watching for changes.");
                 return;
             }
 
@@ -399,29 +411,90 @@ namespace LightroomSync
                 return;
             }
 
-            var result = MessageBox.Show(
-                "Start sync monitoring? This will watch for Lightroom to close and sync catalogs with the network.",
-                "Confirm Start",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-            if (result == DialogResult.Yes)
+            bool start = config.SkipStartSyncConfirmation;
+            if (!start)
+            {
+                using var dlg = new StartSyncConfirmDialog();
+                start = dlg.ShowDialog(this) == DialogResult.OK;
+                if (start && dlg.DontShowAgain)
+                    config.SkipStartSyncConfirmation = true;
+            }
+            if (start)
             {
                 timer1.Enabled = true;
+                lightroomCheckTimer.Enabled = true;
                 buttonStartSync.Text = "Stop Sync";
-                statusLabel.Text = "Syncing";
-                Log("Sync monitoring started.");
+                UpdateStopSyncButtonAppearance();
+                SetStatus("Syncing");
+                Log("Watching for catalog changes...");
             }
         }
 
         private void OpenSettings()
         {
             using var dlg = new SettingsDialog(config);
-            dlg.ShowDialog(this);
+            if (dlg.ShowDialog(this) == DialogResult.OK)
+                RefreshCatalogDisplay();
         }
 
-        private void buttonSettings_Click(object sender, EventArgs e) => OpenSettings();
+        private void RefreshCatalogDisplay()
+        {
+            if (InvokeRequired) { Invoke(RefreshCatalogDisplay); return; }
+            if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
+            {
+                catalogLabel.Text = "No catalogs configured";
+                return;
+            }
+            var files = Directory.GetFiles(config.LocalFolder, "*.lrcat");
+            var names = files.Select(f => Path.GetFileNameWithoutExtension(f)).ToArray();
+            catalogLabel.Text = names.Length == 0 ? "No catalogs found" : "Syncing: " + string.Join(", ", names);
+        }
 
-        private void settingsToolStripMenuItem_Click(object sender, EventArgs e) => OpenSettings();
+        private void TryUpdateLastSyncFromStatusFile()
+        {
+            if (string.IsNullOrWhiteSpace(config.NetworkFolder) || !Directory.Exists(config.NetworkFolder)) return;
+            try
+            {
+                var statusPath = Path.Combine(config.NetworkFolder, "status.txt");
+                if (!File.Exists(statusPath)) return;
+                var fileTime = File.GetLastWriteTime(statusPath);
+                if (config.LastSyncTime == null || fileTime > config.LastSyncTime.Value)
+                {
+                    config.LastSyncTime = fileTime;
+                }
+            }
+            catch { /* network may be unavailable */ }
+        }
+
+        private void RefreshLastSyncDisplay()
+        {
+            if (InvokeRequired) { Invoke(RefreshLastSyncDisplay); return; }
+            if (config.LastSyncTime == null)
+            {
+                lastSyncLabel.Text = "Last synced: never";
+                return;
+            }
+            var ago = DateTime.Now - config.LastSyncTime.Value;
+            lastSyncLabel.Text = ago.TotalMinutes < 1 ? "Last synced: just now"
+                : ago.TotalMinutes < 60 ? $"Last synced: {ago.TotalMinutes:F0} min ago"
+                : ago.TotalHours < 24 ? $"Last synced: {ago.TotalHours:F0} hr ago"
+                : $"Last synced: {config.LastSyncTime:MMM d, h:mm tt}";
+        }
+
+        private void SetStatus(string text)
+        {
+            if (InvokeRequired) { Invoke(() => SetStatus(text)); return; }
+            statusLabel.Text = text;
+        }
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var dlg = new SettingsDialog(config);
+            if (dlg.ShowDialog(this) == DialogResult.OK)
+            {
+                RefreshCatalogDisplay();
+            }
+        }
 
         private async void testOutOfSyncToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -454,7 +527,7 @@ namespace LightroomSync
 
             try
             {
-                Log("Creating test scenario: " + testZipName);
+                Log("Creating test scenario...");
                 var foldersToZip = new List<string>();
                 if (Directory.Exists(dir1)) foldersToZip.Add(dir1);
                 if (Directory.Exists(dir2)) foldersToZip.Add(dir2);
@@ -472,7 +545,7 @@ namespace LightroomSync
                 };
                 File.WriteAllText(Path.Combine(config.NetworkFolder, "status.txt"), testStatus.ToJson());
 
-                Log("Test scenario created. Triggering sync check...");
+                Log("Test scenario ready. Checking for updates...");
                 HandleTimerEvent();
             }
             catch (Exception ex)
@@ -489,21 +562,46 @@ namespace LightroomSync
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (timerBeingHandled == true)
-            {
-                //return;
-            }
-
+            if (timerBeingHandled == true) { }
             HandleTimerEvent();
+        }
+
+        private static readonly Color StopSyncAccent = Color.FromArgb(0, 122, 204);
+        private static readonly Color StopSyncDisabledBg = Color.FromArgb(55, 55, 62);
+        private static readonly Color StopSyncDisabledFg = Color.FromArgb(100, 100, 110);
+
+        private void UpdateStopSyncButtonAppearance()
+        {
+            bool lrOpen = Status.LightroomIsOpen();
+            buttonStartSync.Enabled = !lrOpen;
+            if (lrOpen)
+            {
+                buttonStartSync.BackColor = StopSyncDisabledBg;
+                buttonStartSync.ForeColor = StopSyncDisabledFg;
+                toolTip.SetToolTip(buttonStartSync, "Close Lightroom to stop sync");
+            }
+            else
+            {
+                buttonStartSync.BackColor = StopSyncAccent;
+                buttonStartSync.ForeColor = Color.White;
+                toolTip.SetToolTip(buttonStartSync, "");
+            }
+        }
+
+        private void lightroomCheckTimer_Tick(object sender, EventArgs e)
+        {
+            if (!timer1.Enabled) return;
+            if (InvokeRequired) { Invoke(lightroomCheckTimer_Tick, sender, e); return; }
+            UpdateStopSyncButtonAppearance();
         }
 
         private async void HandleTimerEvent()
         {
-
             timerBeingHandled = true;
 
             if (Status.LightroomIsOpen() && hasDealtWithLightroomOpen == false)
             {
+                SetStatus("Waiting for Lightroom to close...");
                 timer1.Enabled = false;
 
                 Status? loadedStatus = getNetworkStatus();
@@ -519,6 +617,7 @@ namespace LightroomSync
                             processes[0].Kill();
                             Log("Lightroom process killed. Please close Lightroom on " + loadedStatus.LastUser + " before trying again.");
                             StopFlashing();
+                            SetStatus("Syncing");
                             timer1.Enabled = true;
                             timerBeingHandled = false;
                             return;
@@ -526,39 +625,43 @@ namespace LightroomSync
                         else
                         {
                             Log("ERROR: Couldn't find Lightroom process to kill! Either this is a bug or you closed it manually. Please restart this application (and consider filing a bug report on GitHub).");
+                            SetStatus("Syncing");
                             return;
                         }
                     }
 
                     // Continue if user selected DialogResult.No, since that means they want to wipe the existing status
-                    Log("The status file on your network will be overwritten by this machine.");
+                Log("Taking over sync status from other machine.");
                     StopFlashing();
                 }
 
-                Log("Detected Lightroom is open. Updating the status file to alert other machines.");
+                Log("Lightroom is open — notifying other machines to wait.");
                 hasDealtWithLightroomOpen = true;
                 status.isSafeToOverride = false;
                 status.LastUser = Environment.MachineName;
                 await UpdateStatusFileOnNetwork();
+                SetStatus("Syncing");
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == true)
             {
-                //This means Lightroom WAS open, but isn't anymore. This is where we upload the catalogs.
+                SetStatus("Uploading catalogs...");
                 timer1.Enabled = false;
                 await UploadCatalogs();
                 hasDealtWithLightroomOpen = false;
+                SetStatus("Syncing");
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == false)
             {
-                // Lightroom has not been open, so there's a possibility the network has newer catalogs.
+                SetStatus("Checking for updates...");
                 timer1.Enabled = false;
                 Status? loadedStatus = getNetworkStatus();
                 if (loadedStatus == null)
                 {
+                    SetStatus("Syncing");
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -566,6 +669,7 @@ namespace LightroomSync
 
                 if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
                 {
+                    SetStatus("Syncing");
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -601,7 +705,7 @@ namespace LightroomSync
 
                         if (choice == BackupOrDiscardChoice.Cancel)
                         {
-                            Log("Update cancelled by user for " + catName);
+                            Log($"Update skipped for {catName}.");
                             continue;
                         }
 
@@ -623,11 +727,12 @@ namespace LightroomSync
                                             AddDirectoryToZip(zipArchive, dir2, catName + " Helper.lrdata");
                                     }
                                 });
-                                Log("Backed up " + catName + " to " + backupZipPath);
+                                Log($"Backed up {catName} before replacing.");
                             }
                             catch (Exception ex)
                             {
                                 Log("ERROR backing up catalog: " + ex.Message + " - Aborting update.");
+                                SetStatus("Syncing");
                                 timer1.Enabled = true;
                                 timerBeingHandled = false;
                                 return;
@@ -636,34 +741,24 @@ namespace LightroomSync
                         else if (choice == BackupOrDiscardChoice.Backup && string.IsNullOrWhiteSpace(config.BackupFolder))
                         {
                             Log("Backup folder not set. Please set Backup Folder and try again. Aborting update.");
+                            SetStatus("Syncing");
                             timer1.Enabled = true;
                             timerBeingHandled = false;
                             return;
                         }
 
-                        Log("Newer catalog version detected! Copying " + catalog + " to local storage.");
+                        SetStatus("Downloading " + catName + "...");
+                        Log($"Newer version of {catName} found. Downloading...");
                         try
                         {
                             await Task.Run(() => { File.Copy(Path.Combine(config.NetworkFolder, catalog), catalog); });
-                            Log(catalog + " copied successfully. Erasing existing catalog.");
+                            Log($"Downloaded. Replacing local {catName}...");
 
                             try
                             {
-                                if (File.Exists(file1))
-                                {
-                                    File.Delete(file1);
-                                    Log("Deleted " + file1);
-                                }
-                                if (Directory.Exists(dir1))
-                                {
-                                    Directory.Delete(dir1, recursive: true);
-                                    Log("Deleted " + dir1);
-                                }
-                                if (Directory.Exists(dir2))
-                                {
-                                    Directory.Delete(dir2, recursive: true);
-                                    Log("Deleted " + dir2);
-                                }
+                                if (File.Exists(file1)) File.Delete(file1);
+                                if (Directory.Exists(dir1)) Directory.Delete(dir1, recursive: true);
+                                if (Directory.Exists(dir2)) Directory.Delete(dir2, recursive: true);
                             }
                             catch (IOException ex)
                             {
@@ -684,7 +779,7 @@ namespace LightroomSync
                                 return;
                             }
 
-                            Log("Extracting zip");
+                            Log("Extracting...");
                             try
                             {
                                 string zipPath = catalog;
@@ -700,7 +795,7 @@ namespace LightroomSync
                                 {
                                     File.SetLastWriteTime(file1, zipTimestamp);
                                 }
-                                Log("Unzipped " + catalog + " - Now deleting the zip file locally.");
+                                Log("Extraction complete.");
                             }
                             catch (Exception ex)
                             {
@@ -711,7 +806,9 @@ namespace LightroomSync
                             //You know what? If this file I just created has errors in deleting, I want someone to go file a bug report.
                             //That's absurd, and I'm not adding another wall of error handling around it.
                             File.Delete(catalog);
-                            Log("Zip file deleted. This catalog is up to date!");
+                            config.LastSyncTime = DateTime.Now;
+                            RefreshLastSyncDisplay();
+                            Log($"Downloaded and applied {catName}.");
                         }
                         catch (IOException ex)
                         {
@@ -720,6 +817,7 @@ namespace LightroomSync
                     }
                 }
 
+                SetStatus("Syncing");
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }

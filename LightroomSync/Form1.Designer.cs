@@ -49,7 +49,7 @@ namespace LightroomSync
             var dashboardPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 80,
+                Height = 100,
                 Padding = new Padding(spacing),
                 BackColor = panelBg
             };
@@ -58,19 +58,23 @@ namespace LightroomSync
             statusLabel.Text = "Idle";
             statusLabel.ForeColor = textMuted;
             statusLabel.Font = new Font("Segoe UI", 11F);
-            statusLabel.Location = new Point(spacing, 18);
+            statusLabel.Location = new Point(spacing, 12);
             statusLabel.AutoSize = true;
 
-            buttonSettings = new Button();
-            buttonSettings.Text = "Settings";
-            buttonSettings.FlatStyle = FlatStyle.Flat;
-            buttonSettings.BackColor = inputBg;
-            buttonSettings.ForeColor = textPrimary;
-            buttonSettings.Font = new Font("Segoe UI", 9F);
-            buttonSettings.FlatAppearance.BorderColor = Color.FromArgb(60, 60, 66);
-            buttonSettings.Size = new Size(90, 36);
-            buttonSettings.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            buttonSettings.Click += buttonSettings_Click;
+            catalogLabel = new Label();
+            catalogLabel.Text = "No catalogs configured";
+            catalogLabel.ForeColor = textMuted;
+            catalogLabel.Font = new Font("Segoe UI", 9F);
+            catalogLabel.Location = new Point(spacing, 36);
+            catalogLabel.AutoSize = true;
+            catalogLabel.MaximumSize = new Size(400, 0);
+
+            lastSyncLabel = new Label();
+            lastSyncLabel.Text = "Last synced: never";
+            lastSyncLabel.ForeColor = textMuted;
+            lastSyncLabel.Font = new Font("Segoe UI", 9F);
+            lastSyncLabel.Location = new Point(spacing, 54);
+            lastSyncLabel.AutoSize = true;
 
             buttonStartSync = new Button();
             buttonStartSync.Text = "Start Sync";
@@ -106,6 +110,11 @@ namespace LightroomSync
 
             timer1 = new System.Windows.Forms.Timer(components) { Interval = 5000, Enabled = false };
             timer1.Tick += timer1_Tick;
+
+            lightroomCheckTimer = new System.Windows.Forms.Timer(components) { Interval = 500, Enabled = false };
+            lightroomCheckTimer.Tick += lightroomCheckTimer_Tick;
+
+            toolTip = new ToolTip();
 
             // --- Menu ---
             menuStrip1.BackColor = panelBg;
@@ -167,12 +176,11 @@ namespace LightroomSync
             activityPanel.Controls.Add(eventsTextBox);
             activityPanel.Controls.Add(activityHeader);
 
-            statusLabel.Location = new Point(spacing, 22);
-            buttonSettings.Location = new Point(280, 12);
-            buttonStartSync.Location = new Point(380, 12);
+            buttonStartSync.Location = new Point(380, 28);
 
             dashboardPanel.Controls.Add(statusLabel);
-            dashboardPanel.Controls.Add(buttonSettings);
+            dashboardPanel.Controls.Add(catalogLabel);
+            dashboardPanel.Controls.Add(lastSyncLabel);
             dashboardPanel.Controls.Add(buttonStartSync);
 
             mainPanel.Controls.Add(activityPanel);
@@ -182,7 +190,6 @@ namespace LightroomSync
             {
                 var w = dashboardPanel.ClientSize.Width;
                 buttonStartSync.Left = w - spacing - 120;
-                buttonSettings.Left = w - spacing - 220;
             };
 
             // --- Form ---
@@ -210,11 +217,14 @@ namespace LightroomSync
         #endregion
 
         private Label statusLabel;
-        private Button buttonSettings;
+        private Label catalogLabel;
+        private Label lastSyncLabel;
         private Button buttonStartSync;
         private Label labelActivity;
         private TextBox eventsTextBox;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Timer lightroomCheckTimer;
+        private ToolTip toolTip;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem settingsToolStripMenuItem;

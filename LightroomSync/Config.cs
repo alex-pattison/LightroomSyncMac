@@ -15,6 +15,12 @@ namespace LightroomSync
 
         public bool AutoCheckForUpdates { get; set; }
 
+        /// <summary>If true, skip the Start Sync confirmation dialog.</summary>
+        public bool SkipStartSyncConfirmation { get; set; }
+
+        /// <summary>When a catalog was last successfully uploaded to the network.</summary>
+        public DateTime? LastSyncTime { get; set; }
+
         public Config() { 
             this.LocalFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\Lightroom";
             this.NetworkFolder = "P:\\Lightroom";
