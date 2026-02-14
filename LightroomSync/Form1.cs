@@ -67,11 +67,33 @@ namespace LightroomSync
             if (eventsTextBox.InvokeRequired)
             {
                 eventsTextBox.Invoke(new Action<string>(Log), message + Environment.NewLine + eventsTextBox.Text);
+                return;
             }
-            else
+            eventsTextBox.Text = message + Environment.NewLine + eventsTextBox.Text;
+            LogToFile(message);
+        }
+
+        private void LogToFile(string message)
+        {
+            try
             {
-                eventsTextBox.Text = message + Environment.NewLine + eventsTextBox.Text;
+                var folder = GetLogFolder();
+                if (string.IsNullOrEmpty(folder)) return;
+                Directory.CreateDirectory(folder);
+                var file = Path.Combine(folder, $"LightroomSync_{DateTime.Now:yyyy-MM-dd}.log");
+                var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
+                File.AppendAllText(file, line + Environment.NewLine);
             }
+            catch { /* don't fail app if logging fails */ }
+        }
+
+        private string GetLogFolder()
+        {
+            if (!string.IsNullOrWhiteSpace(config.LogFolder) && Directory.Exists(config.LogFolder))
+                return config.LogFolder;
+            if (!string.IsNullOrWhiteSpace(config.NetworkFolder) && Directory.Exists(config.NetworkFolder))
+                return Path.Combine(config.NetworkFolder, "Logs");
+            return "";
         }
 
         private static void CopyDirectory(string sourceDir, string destDir)
@@ -379,6 +401,58 @@ namespace LightroomSync
 
             if (config.AutoCheckForUpdates)
                 autoCheckForUpdatesToolStripMenuItem.Image = Resources.checkmark;
+
+            showActivityLogToolStripMenuItem.Checked = config.ShowActivityLog;
+            activityPanel.Visible = config.ShowActivityLog;
+            toolTip.SetToolTip(buttonLaunchLightroom, "Start sync first");
+            ApplyFormSize();
+
+            CleanupOldLogs();
+        }
+
+        private const int FormWidth = 720;
+        private const int HeightWithActivity = 480;
+        private const int HeightWithoutActivity = 220;
+
+        private void ApplyFormSize()
+        {
+            var h = activityPanel.Visible ? HeightWithActivity : HeightWithoutActivity;
+            ClientSize = new Size(FormWidth, h);
+            MinimumSize = MaximumSize = new Size(FormWidth, h);
+        }
+
+        private void CleanupOldLogs()
+        {
+            try
+            {
+                var folder = GetLogFolder();
+                if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) return;
+                var cutoff = DateTime.Now.AddDays(-30);
+                foreach (var path in Directory.GetFiles(folder, "LightroomSync_*.log"))
+                {
+                    try
+                    {
+                        if (File.GetLastWriteTime(path) < cutoff)
+                            File.Delete(path);
+                    }
+                    catch { /* skip if file in use or other error */ }
+                }
+            }
+            catch { /* don't fail app if cleanup fails */ }
+        }
+
+        private void showActivityLogToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            config.ShowActivityLog = !config.ShowActivityLog;
+            showActivityLogToolStripMenuItem.Checked = config.ShowActivityLog;
+            activityPanel.Visible = config.ShowActivityLog;
+            ApplyFormSize();
+            File.WriteAllText(ConfigFileName, config.ToJson());
+        }
+
+        private void buttonLaunchLightroom_Click(object? sender, EventArgs e)
+        {
+            // TODO: Launch Lightroom functionality
         }
 
         private void buttonStartSync_Click(object sender, EventArgs e)
@@ -392,7 +466,10 @@ namespace LightroomSync
                 buttonStartSync.BackColor = StopSyncAccent;
                 buttonStartSync.ForeColor = Color.White;
                 toolTip.SetToolTip(buttonStartSync, "");
+                buttonLaunchLightroom.Enabled = false;
+                toolTip.SetToolTip(buttonLaunchLightroom, "Start sync first");
                 SetStatus("Idle");
+                SetStatusStrip("", ApertureIconState.DimIdle);
                 Log("Stopped watching for changes.");
                 return;
             }
@@ -424,8 +501,11 @@ namespace LightroomSync
                 timer1.Enabled = true;
                 lightroomCheckTimer.Enabled = true;
                 buttonStartSync.Text = "Stop Sync";
+                buttonLaunchLightroom.Enabled = true;
+                toolTip.SetToolTip(buttonLaunchLightroom, "");
                 UpdateStopSyncButtonAppearance();
                 SetStatus("Syncing");
+                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                 Log("Watching for catalog changes...");
             }
         }
@@ -481,10 +561,82 @@ namespace LightroomSync
                 : $"Last synced: {config.LastSyncTime:MMM d, h:mm tt}";
         }
 
-        private void SetStatus(string text)
+        private void SetStatus(string _)
         {
-            if (InvokeRequired) { Invoke(() => SetStatus(text)); return; }
-            statusLabel.Text = text;
+            // Status shown via statusStripLabel from SetStatusStrip
+        }
+
+        private DateTime _statusStripActiveTime;
+        private System.Windows.Forms.Timer? _statusStripDelayTimer;
+
+        private void SetStatusStrip(string text, ApertureIconState state)
+        {
+            if (InvokeRequired) { Invoke(() => SetStatusStrip(text, state)); return; }
+            statusStripLabel.Text = string.IsNullOrEmpty(text) ? "Ready" : text;
+
+            if (state == ApertureIconState.Active)
+            {
+                _statusStripActiveTime = DateTime.Now;
+                _statusStripDelayTimer?.Stop();
+                spinningSyncIcon.State = ApertureIconState.Active;
+            }
+            else
+            {
+                var elapsed = (DateTime.Now - _statusStripActiveTime).TotalSeconds;
+                if (spinningSyncIcon.State == ApertureIconState.Active && elapsed < 1.5)
+                {
+                    var delayMs = (int)((1.5 - elapsed) * 1000);
+                    _statusStripDelayTimer?.Stop();
+                    _statusStripDelayTimer = new System.Windows.Forms.Timer { Interval = Math.Max(100, delayMs) };
+                    _statusStripDelayTimer.Tick += (s, _) =>
+                    {
+                        _statusStripDelayTimer?.Stop();
+                        spinningSyncIcon.State = state;
+                    };
+                    _statusStripDelayTimer.Start();
+                }
+                else
+                {
+                    spinningSyncIcon.State = state;
+                    _statusStripDelayTimer?.Stop();
+                }
+            }
+        }
+
+        private void iconGuideToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            var msg = "Icon guide:\n\n" +
+                "• Dim (gray): Ready — sync not started\n" +
+                "• Normal: Watching for changes\n" +
+                "• Spinning: Syncing / uploading catalogs\n" +
+                "• Green: Lightroom is open (close it to sync)\n" +
+                "• Yellow: Newer catalog available on network\n" +
+                "• Red: Error\n" +
+                "• White flash: Task completed successfully";
+            MessageBox.Show(msg, "Icon Guide", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void openLogFolderToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            var folder = GetLogFolder();
+            if (string.IsNullOrEmpty(folder))
+            {
+                MessageBox.Show("No log folder is configured. Set a Network Folder in Settings, or choose a custom Log Folder.", "Logs", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (!Directory.Exists(folder))
+            {
+                MessageBox.Show($"Log folder does not exist yet:\n{folder}\n\nLogs will be created when you run a sync.", "Logs", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = folder, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not open log folder: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -574,6 +726,8 @@ namespace LightroomSync
         {
             bool lrOpen = Status.LightroomIsOpen();
             buttonStartSync.Enabled = !lrOpen;
+            if (lrOpen && timer1.Enabled)
+                spinningSyncIcon.State = ApertureIconState.LightroomOpen;
             if (lrOpen)
             {
                 buttonStartSync.BackColor = StopSyncDisabledBg;
@@ -602,6 +756,7 @@ namespace LightroomSync
             if (Status.LightroomIsOpen() && hasDealtWithLightroomOpen == false)
             {
                 SetStatus("Waiting for Lightroom to close...");
+                SetStatusStrip("Waiting for Lightroom to close...", ApertureIconState.LightroomOpen);
                 timer1.Enabled = false;
 
                 Status? loadedStatus = getNetworkStatus();
@@ -618,6 +773,7 @@ namespace LightroomSync
                             Log("Lightroom process killed. Please close Lightroom on " + loadedStatus.LastUser + " before trying again.");
                             StopFlashing();
                             SetStatus("Syncing");
+                            SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                             timer1.Enabled = true;
                             timerBeingHandled = false;
                             return;
@@ -626,6 +782,7 @@ namespace LightroomSync
                         {
                             Log("ERROR: Couldn't find Lightroom process to kill! Either this is a bug or you closed it manually. Please restart this application (and consider filing a bug report on GitHub).");
                             SetStatus("Syncing");
+                            SetStatusStrip("Error: Couldn't find Lightroom process", ApertureIconState.Error);
                             return;
                         }
                     }
@@ -641,27 +798,32 @@ namespace LightroomSync
                 status.LastUser = Environment.MachineName;
                 await UpdateStatusFileOnNetwork();
                 SetStatus("Syncing");
+                SetStatusStrip("Waiting for Lightroom to close...", ApertureIconState.LightroomOpen);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == true)
             {
                 SetStatus("Uploading catalogs...");
+                SetStatusStrip("Uploading catalogs...", ApertureIconState.Active);
                 timer1.Enabled = false;
                 await UploadCatalogs();
                 hasDealtWithLightroomOpen = false;
                 SetStatus("Syncing");
+                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == false)
             {
                 SetStatus("Checking for updates...");
+                SetStatusStrip("Checking for updates...", ApertureIconState.Idle);
                 timer1.Enabled = false;
                 Status? loadedStatus = getNetworkStatus();
                 if (loadedStatus == null)
                 {
                     SetStatus("Syncing");
+                    SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -670,6 +832,7 @@ namespace LightroomSync
                 if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
                 {
                     SetStatus("Syncing");
+                    SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -693,6 +856,8 @@ namespace LightroomSync
                         string file1 = Path.Combine(config.LocalFolder, catName + ".lrcat");
                         string dir1 = Path.Combine(config.LocalFolder, catName + ".lrcat-data");
                         string dir2 = Path.Combine(config.LocalFolder, catName + " Helper.lrdata");
+
+                        SetStatusStrip("Newer catalog available", ApertureIconState.Warning);
 
                         // Only ask Backup/Discard if we have an existing catalog to replace
                         var choice = BackupOrDiscardChoice.Discard;
@@ -733,6 +898,7 @@ namespace LightroomSync
                             {
                                 Log("ERROR backing up catalog: " + ex.Message + " - Aborting update.");
                                 SetStatus("Syncing");
+                                SetStatusStrip("Backup failed: " + ex.Message, ApertureIconState.Error);
                                 timer1.Enabled = true;
                                 timerBeingHandled = false;
                                 return;
@@ -742,12 +908,14 @@ namespace LightroomSync
                         {
                             Log("Backup folder not set. Please set Backup Folder and try again. Aborting update.");
                             SetStatus("Syncing");
+                            SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                             timer1.Enabled = true;
                             timerBeingHandled = false;
                             return;
                         }
 
                         SetStatus("Downloading " + catName + "...");
+                        SetStatusStrip($"Downloading {catName}...", ApertureIconState.Active);
                         Log($"Newer version of {catName} found. Downloading...");
                         try
                         {
@@ -818,6 +986,7 @@ namespace LightroomSync
                 }
 
                 SetStatus("Syncing");
+                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }

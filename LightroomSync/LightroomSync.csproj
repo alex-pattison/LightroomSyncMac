@@ -26,6 +26,7 @@
   <ItemGroup>
     <EmbeddedResource Include="checkmark.png" />
     <EmbeddedResource Include="camera_dev.png" />
+    <EmbeddedResource Include="aperture_icon.png" />
   </ItemGroup>
 
   <ItemGroup>

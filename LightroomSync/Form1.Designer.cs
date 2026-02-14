@@ -27,7 +27,7 @@ namespace LightroomSync
             var textPrimary = Color.FromArgb(241, 241, 243);
             var textMuted = Color.FromArgb(161, 161, 170);
             var accent = Color.FromArgb(0, 122, 204);
-            var spacing = 20;
+            var spacing = 28;
 
             var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(spacing), BackColor = bgDark };
 
@@ -45,36 +45,59 @@ namespace LightroomSync
             checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
 
-            // --- Dashboard: Status + Actions ---
-            var dashboardPanel = new Panel
+            // --- Unified content panel: icon + status + catalog + last sync + buttons ---
+            var contentPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 100,
+                Height = 140,
                 Padding = new Padding(spacing),
                 BackColor = panelBg
             };
 
-            statusLabel = new Label();
-            statusLabel.Text = "Idle";
-            statusLabel.ForeColor = textMuted;
-            statusLabel.Font = new Font("Segoe UI", 11F);
-            statusLabel.Location = new Point(spacing, 12);
-            statusLabel.AutoSize = true;
+            spinningSyncIcon = new SpinningSyncIcon();
+            spinningSyncIcon.Location = new Point(0, 28);
+            spinningSyncIcon.Size = new Size(72, 72);
+
+            var textFlowPanel = new FlowLayoutPanel
+            {
+                Location = new Point(108, 28),
+                Size = new Size(320, 90),
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = panelBg,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+
+            statusStripLabel = new Label();
+            statusStripLabel.Text = "Ready";
+            statusStripLabel.ForeColor = textPrimary;
+            statusStripLabel.Font = new Font("Segoe UI Semibold", 11F);
+            statusStripLabel.AutoSize = true;
+            statusStripLabel.MaximumSize = new Size(320, 0);
+            statusStripLabel.Margin = new Padding(0, 0, 0, 4);
 
             catalogLabel = new Label();
             catalogLabel.Text = "No catalogs configured";
             catalogLabel.ForeColor = textMuted;
             catalogLabel.Font = new Font("Segoe UI", 9F);
-            catalogLabel.Location = new Point(spacing, 36);
             catalogLabel.AutoSize = true;
-            catalogLabel.MaximumSize = new Size(400, 0);
+            catalogLabel.MaximumSize = new Size(320, 0);
+            catalogLabel.Margin = new Padding(0, 0, 0, 4);
 
             lastSyncLabel = new Label();
             lastSyncLabel.Text = "Last synced: never";
             lastSyncLabel.ForeColor = textMuted;
             lastSyncLabel.Font = new Font("Segoe UI", 9F);
-            lastSyncLabel.Location = new Point(spacing, 54);
             lastSyncLabel.AutoSize = true;
+            lastSyncLabel.MaximumSize = new Size(320, 0);
+            lastSyncLabel.Margin = new Padding(0, 0, 0, 0);
+
+            textFlowPanel.Controls.Add(statusStripLabel);
+            textFlowPanel.Controls.Add(catalogLabel);
+            textFlowPanel.Controls.Add(lastSyncLabel);
 
             buttonStartSync = new Button();
             buttonStartSync.Text = "Start Sync";
@@ -87,8 +110,37 @@ namespace LightroomSync
             buttonStartSync.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             buttonStartSync.Click += buttonStartSync_Click;
 
+            buttonLaunchLightroom = new Button();
+            buttonLaunchLightroom.Text = "Launch Lightroom";
+            buttonLaunchLightroom.FlatStyle = FlatStyle.Flat;
+            buttonLaunchLightroom.BackColor = inputBg;
+            buttonLaunchLightroom.ForeColor = textMuted;
+            buttonLaunchLightroom.Font = new Font("Segoe UI Semibold", 10F);
+            buttonLaunchLightroom.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 78);
+            buttonLaunchLightroom.FlatAppearance.BorderSize = 1;
+            buttonLaunchLightroom.Size = new Size(120, 36);
+            buttonLaunchLightroom.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            buttonLaunchLightroom.Enabled = false;
+            buttonLaunchLightroom.Click += buttonLaunchLightroom_Click;
+
+            contentPanel.Controls.Add(spinningSyncIcon);
+            contentPanel.Controls.Add(textFlowPanel);
+            contentPanel.Controls.Add(buttonStartSync);
+            contentPanel.Controls.Add(buttonLaunchLightroom);
+
+            contentPanel.Resize += (s, e) =>
+            {
+                var p = (Panel)s!;
+                var right = p.ClientSize.Width - spacing;
+                var btnTop = (p.ClientSize.Height - 36) / 2;
+                buttonStartSync.Left = right - 120 - 120 - 10;
+                buttonStartSync.Top = btnTop;
+                buttonLaunchLightroom.Left = right - 120;
+                buttonLaunchLightroom.Top = btnTop;
+            };
+
             // --- Activity log ---
-            var activityPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0), BackColor = bgDark };
+            activityPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0), BackColor = bgDark };
 
             var activityHeader = new Panel { Dock = DockStyle.Top, Height = 28, BackColor = bgDark };
 
@@ -123,14 +175,19 @@ namespace LightroomSync
             menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, helpToolStripMenuItem });
 
             fileToolStripMenuItem.Text = "File";
+            showActivityLogToolStripMenuItem = new ToolStripMenuItem();
             fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
                 settingsToolStripMenuItem,
+                showActivityLogToolStripMenuItem,
                 launchAtStartupToolStripMenuItem,
                 autoCheckForUpdatesToolStripMenuItem,
                 testOutOfSyncToolStripMenuItem,
                 minimizeToTrayToolStripMenuItem,
                 exitToolStripMenuItem
             });
+
+            showActivityLogToolStripMenuItem.Text = "Show activity log";
+            showActivityLogToolStripMenuItem.Click += showActivityLogToolStripMenuItem_Click;
 
             settingsToolStripMenuItem.Text = "Settings...";
             settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
@@ -151,12 +208,23 @@ namespace LightroomSync
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
 
             helpToolStripMenuItem.Text = "Help";
+            iconGuideToolStripMenuItem = new ToolStripMenuItem();
+            openLogFolderToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                iconGuideToolStripMenuItem,
+                openLogFolderToolStripMenuItem,
+                new ToolStripSeparator(),
                 submitABugToolStripMenuItem,
                 gitHubPageToolStripMenuItem,
                 checkForUpdatesToolStripMenuItem,
                 aboutToolStripMenuItem
             });
+
+            iconGuideToolStripMenuItem.Text = "Icon guide...";
+            iconGuideToolStripMenuItem.Click += iconGuideToolStripMenuItem_Click;
+
+            openLogFolderToolStripMenuItem.Text = "Open log folder";
+            openLogFolderToolStripMenuItem.Click += openLogFolderToolStripMenuItem_Click;
 
             submitABugToolStripMenuItem.Text = "Submit a bug";
             submitABugToolStripMenuItem.Click += submitABugToolStripMenuItem_Click;
@@ -172,25 +240,12 @@ namespace LightroomSync
 
             activityHeader.Controls.Add(labelActivity);
 
-            // --- Layout --- (Fill first, then Top)
+            // --- Layout ---
             activityPanel.Controls.Add(eventsTextBox);
             activityPanel.Controls.Add(activityHeader);
 
-            buttonStartSync.Location = new Point(380, 28);
-
-            dashboardPanel.Controls.Add(statusLabel);
-            dashboardPanel.Controls.Add(catalogLabel);
-            dashboardPanel.Controls.Add(lastSyncLabel);
-            dashboardPanel.Controls.Add(buttonStartSync);
-
             mainPanel.Controls.Add(activityPanel);
-            mainPanel.Controls.Add(dashboardPanel);
-
-            dashboardPanel.Resize += (s, e) =>
-            {
-                var w = dashboardPanel.ClientSize.Width;
-                buttonStartSync.Left = w - spacing - 120;
-            };
+            mainPanel.Controls.Add(contentPanel);
 
             // --- Form ---
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -200,9 +255,10 @@ namespace LightroomSync
             ClientSize = new Size(520, 420);
             Controls.Add(mainPanel);
             Controls.Add(menuStrip1);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Icon = (Icon)resources.GetObject("$this.Icon");
             MainMenuStrip = menuStrip1;
-            MinimumSize = new Size(420, 320);
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Lightroom Sync+";
@@ -216,10 +272,12 @@ namespace LightroomSync
 
         #endregion
 
-        private Label statusLabel;
+        private Button buttonLaunchLightroom;
         private Label catalogLabel;
         private Label lastSyncLabel;
         private Button buttonStartSync;
+        private Label statusStripLabel;
+        private SpinningSyncIcon spinningSyncIcon;
         private Label labelActivity;
         private TextBox eventsTextBox;
         private System.Windows.Forms.Timer timer1;
@@ -238,5 +296,9 @@ namespace LightroomSync
         private ToolStripMenuItem aboutToolStripMenuItem;
         private ToolStripMenuItem checkForUpdatesToolStripMenuItem;
         private ToolStripMenuItem autoCheckForUpdatesToolStripMenuItem;
+        private ToolStripMenuItem iconGuideToolStripMenuItem;
+        private ToolStripMenuItem openLogFolderToolStripMenuItem;
+        private ToolStripMenuItem showActivityLogToolStripMenuItem;
+        private Panel activityPanel;
     }
 }

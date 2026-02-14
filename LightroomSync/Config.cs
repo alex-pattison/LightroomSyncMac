@@ -21,6 +21,12 @@ namespace LightroomSync
         /// <summary>When a catalog was last successfully uploaded to the network.</summary>
         public DateTime? LastSyncTime { get; set; }
 
+        /// <summary>Folder for log files. Empty = sync folder\Logs.</summary>
+        public string LogFolder { get; set; } = "";
+
+        /// <summary>If true, show the activity log panel. Default false.</summary>
+        public bool ShowActivityLog { get; set; } = false;
+
         public Config() { 
             this.LocalFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\Lightroom";
             this.NetworkFolder = "P:\\Lightroom";

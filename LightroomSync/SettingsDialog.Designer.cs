@@ -133,8 +133,47 @@ namespace LightroomSync
             btnSave.ForeColor = Color.White;
             btnSave.Font = new Font("Segoe UI Semibold", 9.5F);
             btnSave.FlatAppearance.BorderSize = 0;
+            // Log folder
+            chkUseDefaultLogFolder = new CheckBox();
+            chkUseDefaultLogFolder.Text = "Use default log folder (sync folder\\Logs)";
+            chkUseDefaultLogFolder.ForeColor = textPrimary;
+            chkUseDefaultLogFolder.BackColor = bgDark;
+            chkUseDefaultLogFolder.Font = new Font("Segoe UI", 9F);
+            chkUseDefaultLogFolder.Location = new Point(spacing, 248);
+            chkUseDefaultLogFolder.AutoSize = true;
+            chkUseDefaultLogFolder.CheckedChanged += chkUseDefaultLogFolder_CheckedChanged;
+
+            lblLogFolder = new Label();
+            lblLogFolder.Text = "Custom log folder";
+            lblLogFolder.ForeColor = textMuted;
+            lblLogFolder.Font = new Font("Segoe UI", 9F);
+            lblLogFolder.Location = new Point(spacing, 280);
+            lblLogFolder.AutoSize = true;
+
+            txtLogFolder = new TextBox();
+            txtLogFolder.BackColor = inputBg;
+            txtLogFolder.ForeColor = textPrimary;
+            txtLogFolder.BorderStyle = BorderStyle.FixedSingle;
+            txtLogFolder.Font = new Font("Consolas", 9.5F);
+            txtLogFolder.Location = new Point(spacing, 304);
+            txtLogFolder.Size = new Size(420, 28);
+            txtLogFolder.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+            btnBrowseLogFolder = new Button();
+            btnBrowseLogFolder.Text = "Browse";
+            btnBrowseLogFolder.FlatStyle = FlatStyle.Flat;
+            btnBrowseLogFolder.BackColor = inputBg;
+            btnBrowseLogFolder.ForeColor = textPrimary;
+            btnBrowseLogFolder.Font = new Font("Segoe UI", 9F);
+            btnBrowseLogFolder.FlatAppearance.BorderColor = inputBorder;
+            btnBrowseLogFolder.Location = new Point(448, 302);
+            btnBrowseLogFolder.Size = new Size(80, 30);
+            btnBrowseLogFolder.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnBrowseLogFolder.Click += btnBrowseLogFolder_Click;
+
+            // Buttons
             btnSave.Size = new Size(100, 36);
-            btnSave.Location = new Point(348, 260);
+            btnSave.Location = new Point(348, 348);
             btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnSave.Click += btnSave_Click;
 
@@ -145,7 +184,7 @@ namespace LightroomSync
             btnCancel.Font = new Font("Segoe UI", 9.5F);
             btnCancel.FlatAppearance.BorderColor = inputBorder;
             btnCancel.Size = new Size(100, 36);
-            btnCancel.Location = new Point(238, 260);
+            btnCancel.Location = new Point(238, 348);
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCancel.Click += btnCancel_Click;
 
@@ -153,7 +192,7 @@ namespace LightroomSync
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = bgDark;
-            ClientSize = new Size(548, 320);
+            ClientSize = new Size(548, 405);
             Controls.Add(lblLocalFolder);
             Controls.Add(txtLocalFolder);
             Controls.Add(btnBrowseLocal);
@@ -164,6 +203,10 @@ namespace LightroomSync
             Controls.Add(lblBackupFolder);
             Controls.Add(txtBackupFolder);
             Controls.Add(btnBrowseBackup);
+            Controls.Add(chkUseDefaultLogFolder);
+            Controls.Add(lblLogFolder);
+            Controls.Add(txtLogFolder);
+            Controls.Add(btnBrowseLogFolder);
             Controls.Add(btnSave);
             Controls.Add(btnCancel);
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -187,6 +230,10 @@ namespace LightroomSync
         private Label lblBackupFolder;
         private TextBox txtBackupFolder;
         private Button btnBrowseBackup;
+        private CheckBox chkUseDefaultLogFolder;
+        private Label lblLogFolder;
+        private TextBox txtLogFolder;
+        private Button btnBrowseLogFolder;
         private Button btnSave;
         private Button btnCancel;
     }

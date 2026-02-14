@@ -10,6 +10,9 @@ namespace LightroomSync
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "Pictures", "LightroomBackups");
 
+        private static string DefaultLogPath(string networkFolder) =>
+            string.IsNullOrEmpty(networkFolder) ? "" : Path.Combine(networkFolder, "Logs");
+
         public SettingsDialog(Config config)
         {
             InitializeComponent();
@@ -24,6 +27,15 @@ namespace LightroomSync
             else
                 txtBackupFolder.Text = config.BackupFolder ?? "";
             UpdateBackupControls();
+
+            var defaultLog = DefaultLogPath(config.NetworkFolder ?? "");
+            chkUseDefaultLogFolder.Checked = string.IsNullOrEmpty(config.LogFolder) ||
+                string.Equals(config.LogFolder.Trim(), defaultLog, StringComparison.OrdinalIgnoreCase);
+            if (chkUseDefaultLogFolder.Checked)
+                txtLogFolder.Text = defaultLog;
+            else
+                txtLogFolder.Text = config.LogFolder ?? "";
+            UpdateLogFolderControls();
         }
 
         private void UpdateBackupControls()
@@ -39,6 +51,24 @@ namespace LightroomSync
             UpdateBackupControls();
         }
 
+        private void UpdateLogFolderControls()
+        {
+            txtLogFolder.Enabled = !chkUseDefaultLogFolder.Checked;
+            btnBrowseLogFolder.Enabled = !chkUseDefaultLogFolder.Checked;
+            if (chkUseDefaultLogFolder.Checked)
+                txtLogFolder.Text = DefaultLogPath(txtSyncFolder.Text);
+        }
+
+        private void chkUseDefaultLogFolder_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateLogFolderControls();
+        }
+
+        private void btnBrowseLogFolder_Click(object sender, EventArgs e)
+        {
+            PickFolder(txtLogFolder);
+        }
+
         private void txtLocalFolder_TextChanged(object sender, EventArgs e)
         {
             ValidatePath(txtLocalFolder);
@@ -47,6 +77,8 @@ namespace LightroomSync
         private void txtSyncFolder_TextChanged(object sender, EventArgs e)
         {
             ValidatePath(txtSyncFolder);
+            if (chkUseDefaultLogFolder.Checked)
+                txtLogFolder.Text = DefaultLogPath(txtSyncFolder.Text);
         }
 
         private void txtBackupFolder_TextChanged(object sender, EventArgs e)
@@ -116,6 +148,7 @@ namespace LightroomSync
             _config.LocalFolder = txtLocalFolder.Text.Trim();
             _config.NetworkFolder = txtSyncFolder.Text.Trim();
             _config.BackupFolder = chkUseDefaultBackup.Checked ? DefaultBackupPath : txtBackupFolder.Text.Trim();
+            _config.LogFolder = chkUseDefaultLogFolder.Checked ? "" : txtLogFolder.Text.Trim();
 
             DialogResult = DialogResult.OK;
             Close();
