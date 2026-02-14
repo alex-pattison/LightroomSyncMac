@@ -16,8 +16,7 @@ namespace LightroomSync
 {
     public partial class Form1 : Form
     {
-        public string currentVersion = "1.0.0"; // <----- Make sure you always update latestVersion.txt as well!
-                                                // Yes, I'm too lazy to pipe this in.
+        private static string CurrentVersion => Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
         private Config config = new Config();
         private Status status = new Status();
@@ -299,18 +298,18 @@ namespace LightroomSync
 
             // Create the NotifyIcon instance
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "Lightroom Sync+ - DEV";
-            var stream = GetType().Assembly.GetManifestResourceStream("LightroomSync.camera_dev.png");
-            if (stream != null)
+            trayIcon.Text = "Lightroom Sync+ DEV";
+            try
             {
-                _trayIconBitmap = new Bitmap(stream);
-                var icon = Icon.FromHandle(_trayIconBitmap.GetHicon());
+                var (icon, bitmap) = SpinningSyncIcon.CreateAppIcon(ApertureIconState.Error, 32);
+                _trayIconBitmap = bitmap; // Keep alive so HICON remains valid
                 trayIcon.Icon = icon;
-                this.Icon = icon; // Window title bar too
+                this.Icon = icon; // Window title bar and taskbar
             }
-            else
+            catch
             {
                 trayIcon.Icon = SystemIcons.Application;
+                this.Icon = SystemIcons.Application;
             }
 
             // Create a context menu for the tray icon
@@ -398,9 +397,6 @@ namespace LightroomSync
 
             if (Utils.ShortcutExistsInStartupFolder())
                 launchAtStartupToolStripMenuItem.Image = Resources.checkmark;
-
-            if (config.AutoCheckForUpdates)
-                autoCheckForUpdatesToolStripMenuItem.Image = Resources.checkmark;
 
             showActivityLogToolStripMenuItem.Checked = config.ShowActivityLog;
             activityPanel.Visible = config.ShowActivityLog;
@@ -998,49 +994,6 @@ namespace LightroomSync
             }
         }
 
-        private async void CheckForUpdates(bool silently)
-        {
-            string version = "ERR NOT SET";
-
-            using (HttpClient client = new HttpClient())
-            {
-                try
-                {
-                    version = await client.GetStringAsync("https://github.com/alex-pattison/LightroomSyncPlus/raw/master/latestVersion.txt");
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error checking for new version: {ex.Message}");
-                    if (silently)
-                    {
-                        return;
-                    }
-                    var result = MessageBox.Show("Sorry, I couldn't find the version number. Do you want to go to the website to check?", "Error!", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                    if (result == DialogResult.Yes)
-                    {
-                        Utils.OpenURL("https://github.com/alex-pattison/LightroomSyncPlus/releases");
-                    }
-                    return;
-                }
-            }
-
-            var parsed = Version.Parse(version);
-
-            if (parsed.CompareTo(Version.Parse(currentVersion)) != 0)
-            {
-                var dialog = "There is a new version! Want to go get it?" + Environment.NewLine + Environment.NewLine + "New Version: " + parsed.ToString() + Environment.NewLine + "Your Version: " + currentVersion.ToString();
-                var result = MessageBox.Show(dialog, "New Version!", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-                if (result == DialogResult.Yes)
-                {
-                    Utils.OpenURL("https://github.com/alex-pattison/LightroomSyncPlus/releases");
-                }
-            }
-            else if (!silently)
-            {
-                MessageBox.Show("You expected an update, but it was me! Dio!", "Up To Date!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
-        }
-
         private void submitABugToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Utils.OpenURL("https://github.com/alex-pattison/LightroomSyncPlus/issues");
@@ -1082,25 +1035,15 @@ namespace LightroomSync
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Lightroom Sync+" + Environment.NewLine + "Copyright 2023 Anthony Bryan" + Environment.NewLine + Environment.NewLine + "Version " + currentVersion);
-        }
-
-        private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            CheckForUpdates(false);
-        }
-
-        private void autoCheckForUpdatesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            config.AutoCheckForUpdates = !config.AutoCheckForUpdates;
-            if (config.AutoCheckForUpdates)
-            {
-                autoCheckForUpdatesToolStripMenuItem.Image = Resources.checkmark;
-            } 
-            else
-            {
-                autoCheckForUpdatesToolStripMenuItem.Image = null;
-            }
+            MessageBox.Show(
+                "Lightroom Sync+" + Environment.NewLine +
+                "Fork of LightroomSync by Anthony Bryan." + Environment.NewLine +
+                Environment.NewLine +
+                "Version " + CurrentVersion + Environment.NewLine +
+                "https://github.com/alex-pattison/LightroomSyncPlus",
+                "About Lightroom Sync+",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
     }
 }

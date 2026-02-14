@@ -41,9 +41,11 @@ dotnet run --project LightroomSync\LightroomSync.csproj -- tray
 
 ## First Run & Configuration
 
-1. On first launch, the app shows the main window with **Local Folder** and **Network Folder** fields.
-2. **Local Folder** – where your Lightroom catalogs live (e.g. `C:\Users\<You>\Pictures\Lightroom`).
-3. **Network Folder** – shared location (e.g. Google Drive path like `G:\My Drive\Lightroom` or `P:\Lightroom`).
+1. On first launch, the app shows the main window. Click **File > Settings** to configure paths.
+2. **Local folder** – where your Lightroom catalogs live (e.g. `C:\Users\<You>\Pictures\Lightroom`).
+3. **Sync folder** – shared location (e.g. Google Drive like `G:\My Drive\Lightroom` or `P:\Lightroom`).
+4. **Backup folder** – optional; defaults to `Pictures\LightroomBackups` when you choose Backup on replace.
+5. **Log folder** – optional; defaults to `Sync folder\Logs`. Use a custom path if needed.
 
 The config is saved to `%AppData%\LightroomSyncPlusDev\config.txt` when you close the app (Debug build). Working files (zips, temp data) go there too. Release builds use `%AppData%\LightroomSyncPlus`.
 
@@ -71,17 +73,16 @@ To avoid touching your real catalog:
    ```
    (or any local folder that will act as the “network” share).
 
-4. In Lightroom Sync+, set:
-   - **Local Folder:** `D:\Dev\LightroomTest`
-   - **Network Folder:** `D:\Dev\LightroomSync\Network`
+4. In Lightroom Sync+, open **File > Settings** and set:
+   - **Local folder:** `D:\Dev\LightroomTest`
+   - **Sync folder:** `D:\Dev\LightroomSync\Network`
 
 5. Test flow:
-   - Open Lightroom and load `TestCatalog`.
+   - Click **Start Sync**, then open Lightroom and load `TestCatalog`.
    - Make a small change (e.g. add/flag a photo).
    - Close Lightroom.
-   - Watch the Events log; the app should zip and upload the catalog.
-   - Click the “Local Folder” label to force an upload manually.
-   - On another “machine” (or after moving the zip), the app should detect the newer version and replace the local catalog.
+   - Watch the activity log; the app should zip and upload the catalog.
+   - On another machine (or after moving the zip), the app detects the newer version and replaces the local catalog. Use **File > Test out of sync** to simulate this without a second machine.
 
 ---
 
@@ -98,8 +99,11 @@ LightroomSyncPlus/
 │   ├── Config.cs            # Local/network paths, settings
 │   ├── Status.cs            # Network status, Lightroom detection
 │   ├── Utils.cs             # Startup shortcut, paths, misc
+│   ├── SettingsDialog.cs    # Settings (paths, backup, log folder)
+│   ├── BackupOrDiscardDialog.cs  # Backup vs discard when update available
+│   ├── SpinningSyncIcon.cs  # Aperture status icon
 │   ├── Alert.cs             # Conflict dialog
-│   └── Properties/         # Resources, launch settings
+│   └── Properties/          # Resources, launch settings
 ├── LICENSE
 ├── README.md
 └── DEV_SETUP.md            # This file
@@ -115,21 +119,33 @@ When the app closes, it writes config to `%AppData%\LightroomSyncPlusDev\config.
 {
   "LocalFolder": "C:\\Users\\You\\Pictures\\Lightroom",
   "NetworkFolder": "G:\\My Drive\\Lightroom",
-  "AutoCheckForUpdates": true,
-  "BackupFolder": "C:\\\\Users\\\\You\\\\Pictures\\\\LightroomBackups"
+  "BackupFolder": "C:\\\\Users\\\\You\\\\Pictures\\\\LightroomBackups",
+  "LogFolder": "",
+  "ShowActivityLog": false,
+  "SkipStartSyncConfirmation": false
 }
 ```
 
-You can edit this file directly for testing, or change paths in the UI.
+- **LogFolder** – Empty = use `NetworkFolder\Logs`. Set a path for a custom log location.
+- **ShowActivityLog** – If true, the activity panel is visible on startup.
+- **SkipStartSyncConfirmation** – If true, Start Sync does not show a confirmation dialog.
+
+You can edit this file directly for testing, or change paths in **File > Settings**.
 
 ---
 
 ## Useful Tips
 
-- **Click “Local Folder”** – triggers an immediate upload (no need to open/close Lightroom).
-- **Events log** – shows sync activity and errors; copy it when reporting issues.
-- **File > Launch At Startup** – adds a shortcut to the Windows Startup folder.
-- **File > Run At Startup** – run the app with `tray` so it starts minimized to the system tray.
+- **Start Sync** – click to begin watching; the aperture icon spins while syncing.
+- **Stop Sync** – click to stop; the icon stops and returns to “ready” state.
+- **Launch LR** – when Lightroom is closed, this button launches Lightroom Classic.
+- **File > Settings** – configure local folder, sync folder, backup folder, and log folder.
+- **File > Show activity log** – toggle the activity panel; useful for debugging.
+- **File > Launch at startup** – adds a shortcut to the Windows Startup folder.
+- **File > Test out of sync** – simulates “newer catalog available” for testing the Backup/Discard flow.
+- **Help > Icon guide** – explains the aperture icon states (dim, spinning, green, yellow, red).
+- **Help > Open log folder** – opens the log directory in Explorer. Copy logs when reporting issues.
+- **Run with `-- tray`** – start minimized to system tray: `dotnet run --project LightroomSync\LightroomSync.csproj -- tray`
 
 ---
 
@@ -148,9 +164,38 @@ You can edit this file directly for testing, or change paths in the UI.
 
 ---
 
-## Next Steps
+## Versioning (beta)
 
-Once you have a working dev instance and test catalog, you can:
+Current version: **0.0.2**
 
-1. Add the **backup vs discard** behavior for out-of-date catalogs.
-2. Plan **cross-platform support** (Mac/PC) by abstracting paths and platform-specific code.
+**Source of truth:** `LightroomSync\LightroomSync.csproj` – `<Version>`, `<AssemblyVersion>`, `<FileVersion>`.
+
+On build, the version is copied to `latestVersion.txt` for releases.
+
+### Bumping version before push
+
+```powershell
+.\scripts\update-version.ps1 0.0.3
+```
+
+Or run without args to be prompted. Updates: csproj, InnoSetup.iss, latestVersion.txt.
+
+---
+
+## Feature Overview
+
+Lightroom Sync+ adds these enhancements over the original LightroomSync:
+
+| Feature | Description |
+|---------|-------------|
+| Backup on replace | Choose Backup or Discard when a newer catalog is on the network |
+| Manual sync control | Start Sync / Stop Sync buttons |
+| Launch Lightroom | One-click launch of Lightroom Classic |
+| Status icon | Aperture icon with states: dim, spinning, green (LR open), yellow (update), red (error) |
+| Settings dialog | Centralized config for local, sync, backup, and log folders |
+| Activity log | Toggle-able panel; File > Show activity log |
+| Skip confirmation | "Don't show again" on Start Sync dialog |
+| Icon guide | Help > Icon guide |
+| Open log folder | Help > Open log folder |
+| Test out of sync | File > Test out of sync – simulates update flow |
+| Dark UI | Modern dark-themed interface |

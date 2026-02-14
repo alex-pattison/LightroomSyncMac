@@ -9,14 +9,15 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Copyright>Copyright 2023 Anthony Bryan</Copyright>
+    <Copyright>Copyright 2023 Anthony Bryan (original); Alex Pattison (fork)</Copyright>
     <RepositoryUrl>https://github.com/alex-pattison/LightroomSyncPlus</RepositoryUrl>
     <PackageProjectUrl>https://github.com/alex-pattison/LightroomSyncPlus</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
+    <Version>0.0.2</Version>
+    <AssemblyVersion>0.0.2</AssemblyVersion>
+    <FileVersion>0.0.2</FileVersion>
     <PackageIcon></PackageIcon>
-    <!-- ApplicationIcon commented out - add camera.ico to project to enable -->
+    <ApplicationIcon>app_icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -61,5 +62,10 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+
+  <!-- Keep latestVersion.txt in sync when building -->
+  <Target Name="UpdateLatestVersion" AfterTargets="Build">
+    <WriteLinesToFile File="$(MSBuildProjectDirectory)\..\latestVersion.txt" Lines="$(Version)" Overwrite="true" />
+  </Target>
 
 </Project>

@@ -2,8 +2,8 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Lightroom Sync+"
-#define MyAppVersion "1.0"
-#define MyAppPublisher "Anthony Bryan"
+#define MyAppVersion "0.0.2"
+#define MyAppPublisher "Alex Pattison"
 #define MyAppURL "https://github.com/alex-pattison/LightroomSyncPlus"
 #define MyAppExeName "LightroomSyncPlus.exe"
 
@@ -21,7 +21,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=C:\Git\LightroomSync\LICENSE
+LicenseFile=LICENSE
 ; Remove the following line to run in administrative install mode (install for all users.)
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
@@ -42,7 +42,7 @@ Source: "LightroomSync\bin\Release\net8.0-windows\LightroomSyncPlus.deps.json"; 
 Source: "LightroomSync\bin\Release\net8.0-windows\LightroomSyncPlus.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LightroomSync\bin\Release\net8.0-windows\LightroomSyncPlus.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "LightroomSync\bin\Release\net8.0-windows\LightroomSyncPlus.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Git\LightroomSync\LightroomSync\bin\Release\net6.0-windows\Newtonsoft.Json.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "LightroomSync\bin\Release\net8.0-windows\Newtonsoft.Json.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

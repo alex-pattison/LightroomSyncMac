@@ -35,14 +35,12 @@ namespace LightroomSync
             fileToolStripMenuItem = new ToolStripMenuItem();
             settingsToolStripMenuItem = new ToolStripMenuItem();
             launchAtStartupToolStripMenuItem = new ToolStripMenuItem();
-            autoCheckForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             testOutOfSyncToolStripMenuItem = new ToolStripMenuItem();
             minimizeToTrayToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             submitABugToolStripMenuItem = new ToolStripMenuItem();
             gitHubPageToolStripMenuItem = new ToolStripMenuItem();
-            checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
 
             // --- Content panel (icon + text aligned, buttons below) ---
@@ -207,7 +205,6 @@ namespace LightroomSync
                 settingsToolStripMenuItem,
                 showActivityLogToolStripMenuItem,
                 launchAtStartupToolStripMenuItem,
-                autoCheckForUpdatesToolStripMenuItem,
                 testOutOfSyncToolStripMenuItem,
                 minimizeToTrayToolStripMenuItem,
                 exitToolStripMenuItem
@@ -221,9 +218,6 @@ namespace LightroomSync
 
             launchAtStartupToolStripMenuItem.Text = "Launch at startup";
             launchAtStartupToolStripMenuItem.Click += launchAtStartupToolStripMenuItem_Click;
-
-            autoCheckForUpdatesToolStripMenuItem.Text = "Auto-check for updates";
-            autoCheckForUpdatesToolStripMenuItem.Click += autoCheckForUpdatesToolStripMenuItem_Click;
 
             testOutOfSyncToolStripMenuItem.Text = "Test out of sync...";
             testOutOfSyncToolStripMenuItem.Click += testOutOfSyncToolStripMenuItem_Click;
@@ -243,7 +237,6 @@ namespace LightroomSync
                 new ToolStripSeparator(),
                 submitABugToolStripMenuItem,
                 gitHubPageToolStripMenuItem,
-                checkForUpdatesToolStripMenuItem,
                 aboutToolStripMenuItem
             });
 
@@ -258,9 +251,6 @@ namespace LightroomSync
 
             gitHubPageToolStripMenuItem.Text = "GitHub";
             gitHubPageToolStripMenuItem.Click += gitHubPageToolStripMenuItem_Click;
-
-            checkForUpdatesToolStripMenuItem.Text = "Check for updates";
-            checkForUpdatesToolStripMenuItem.Click += checkForUpdatesToolStripMenuItem_Click;
 
             aboutToolStripMenuItem.Text = "About";
             aboutToolStripMenuItem.Click += aboutToolStripMenuItem_Click;
@@ -284,11 +274,11 @@ namespace LightroomSync
             Controls.Add(menuStrip1);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
-            Icon = (Icon)resources.GetObject("$this.Icon");
+            // Icon set in Form1 constructor from aperture (red for dev)
             MainMenuStrip = menuStrip1;
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Lightroom Sync+";
+            Text = "Lightroom Sync+ DEV";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
 
@@ -321,8 +311,6 @@ namespace LightroomSync
         private ToolStripMenuItem submitABugToolStripMenuItem;
         private ToolStripMenuItem gitHubPageToolStripMenuItem;
         private ToolStripMenuItem aboutToolStripMenuItem;
-        private ToolStripMenuItem checkForUpdatesToolStripMenuItem;
-        private ToolStripMenuItem autoCheckForUpdatesToolStripMenuItem;
         private ToolStripMenuItem iconGuideToolStripMenuItem;
         private ToolStripMenuItem openLogFolderToolStripMenuItem;
         private ToolStripMenuItem showActivityLogToolStripMenuItem;
