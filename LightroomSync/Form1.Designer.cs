@@ -45,29 +45,46 @@ namespace LightroomSync
             checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
 
-            // --- Unified content panel: icon + status + catalog + last sync + buttons ---
+            // --- Content panel (icon + text aligned, buttons below) ---
             var contentPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 140,
+                Height = 196,
                 Padding = new Padding(spacing),
                 BackColor = panelBg
             };
 
+            // Icon + text row: use table for proper vertical alignment
+            var iconTextRow = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 88,
+                BackColor = panelBg,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty,
+                ColumnCount = 2,
+                RowCount = 1
+            };
+            iconTextRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 72));
+            iconTextRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            iconTextRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
             spinningSyncIcon = new SpinningSyncIcon();
-            spinningSyncIcon.Location = new Point(0, 28);
+            spinningSyncIcon.Location = new Point(0, 8);  // 8 = (88-72)/2 for vertical center
             spinningSyncIcon.Size = new Size(72, 72);
 
+            var iconCell = new Panel { Dock = DockStyle.Fill, BackColor = panelBg };
+            iconCell.Controls.Add(spinningSyncIcon);
+
+            var textContainer = new Panel { Dock = DockStyle.Fill, BackColor = panelBg, Padding = new Padding(16, 0, 16, 0) };
             var textFlowPanel = new FlowLayoutPanel
             {
-                Location = new Point(108, 28),
-                Size = new Size(320, 90),
                 FlowDirection = FlowDirection.TopDown,
                 WrapContents = false,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 BackColor = panelBg,
-                Padding = Padding.Empty,
+                Padding = new Padding(0, 14, 0, 14),
                 Margin = Padding.Empty
             };
 
@@ -76,7 +93,7 @@ namespace LightroomSync
             statusStripLabel.ForeColor = textPrimary;
             statusStripLabel.Font = new Font("Segoe UI Semibold", 11F);
             statusStripLabel.AutoSize = true;
-            statusStripLabel.MaximumSize = new Size(320, 0);
+            statusStripLabel.MaximumSize = new Size(400, 0);
             statusStripLabel.Margin = new Padding(0, 0, 0, 4);
 
             catalogLabel = new Label();
@@ -84,7 +101,7 @@ namespace LightroomSync
             catalogLabel.ForeColor = textMuted;
             catalogLabel.Font = new Font("Segoe UI", 9F);
             catalogLabel.AutoSize = true;
-            catalogLabel.MaximumSize = new Size(320, 0);
+            catalogLabel.MaximumSize = new Size(400, 0);
             catalogLabel.Margin = new Padding(0, 0, 0, 4);
 
             lastSyncLabel = new Label();
@@ -92,12 +109,30 @@ namespace LightroomSync
             lastSyncLabel.ForeColor = textMuted;
             lastSyncLabel.Font = new Font("Segoe UI", 9F);
             lastSyncLabel.AutoSize = true;
-            lastSyncLabel.MaximumSize = new Size(320, 0);
+            lastSyncLabel.MaximumSize = new Size(400, 0);
             lastSyncLabel.Margin = new Padding(0, 0, 0, 0);
 
             textFlowPanel.Controls.Add(statusStripLabel);
             textFlowPanel.Controls.Add(catalogLabel);
             textFlowPanel.Controls.Add(lastSyncLabel);
+            textContainer.Controls.Add(textFlowPanel);
+
+            iconTextRow.Controls.Add(iconCell, 0, 0);
+            iconTextRow.Controls.Add(textContainer, 1, 0);
+
+            // Buttons row - equal size columns for identical button dimensions
+            var buttonRow = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 52,
+                ColumnCount = 2,
+                RowCount = 1,
+                BackColor = panelBg,
+                Padding = new Padding(0, 10, 0, 10)
+            };
+            buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            buttonRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            buttonRow.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
 
             buttonStartSync = new Button();
             buttonStartSync.Text = "Start Sync";
@@ -106,40 +141,32 @@ namespace LightroomSync
             buttonStartSync.ForeColor = Color.White;
             buttonStartSync.Font = new Font("Segoe UI Semibold", 10F);
             buttonStartSync.FlatAppearance.BorderSize = 0;
-            buttonStartSync.Size = new Size(120, 36);
-            buttonStartSync.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            buttonStartSync.Size = new Size(110, 36);
+            buttonStartSync.Dock = DockStyle.Fill;
+            buttonStartSync.Margin = new Padding(6, 0, 6, 0);
             buttonStartSync.Click += buttonStartSync_Click;
 
             buttonLaunchLightroom = new Button();
-            buttonLaunchLightroom.Text = "Launch Lightroom";
+            buttonLaunchLightroom.Text = "Launch LR";
             buttonLaunchLightroom.FlatStyle = FlatStyle.Flat;
             buttonLaunchLightroom.BackColor = inputBg;
             buttonLaunchLightroom.ForeColor = textMuted;
             buttonLaunchLightroom.Font = new Font("Segoe UI Semibold", 10F);
             buttonLaunchLightroom.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 78);
             buttonLaunchLightroom.FlatAppearance.BorderSize = 1;
-            buttonLaunchLightroom.Size = new Size(120, 36);
-            buttonLaunchLightroom.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            buttonLaunchLightroom.Size = new Size(110, 36);
+            buttonLaunchLightroom.Dock = DockStyle.Fill;
+            buttonLaunchLightroom.Margin = new Padding(6, 0, 6, 0);
             buttonLaunchLightroom.Enabled = false;
             buttonLaunchLightroom.Click += buttonLaunchLightroom_Click;
 
-            contentPanel.Controls.Add(spinningSyncIcon);
-            contentPanel.Controls.Add(textFlowPanel);
-            contentPanel.Controls.Add(buttonStartSync);
-            contentPanel.Controls.Add(buttonLaunchLightroom);
+            buttonRow.Controls.Add(buttonStartSync, 0, 0);
+            buttonRow.Controls.Add(buttonLaunchLightroom, 1, 0);
 
-            contentPanel.Resize += (s, e) =>
-            {
-                var p = (Panel)s!;
-                var right = p.ClientSize.Width - spacing;
-                var btnTop = (p.ClientSize.Height - 36) / 2;
-                buttonStartSync.Left = right - 120 - 120 - 10;
-                buttonStartSync.Top = btnTop;
-                buttonLaunchLightroom.Left = right - 120;
-                buttonLaunchLightroom.Top = btnTop;
-            };
+            contentPanel.Controls.Add(buttonRow);
+            contentPanel.Controls.Add(iconTextRow);
 
-            // --- Activity log ---
+            // --- Activity log (below content) ---
             activityPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0), BackColor = bgDark };
 
             var activityHeader = new Panel { Dock = DockStyle.Top, Height = 28, BackColor = bgDark };
@@ -252,7 +279,7 @@ namespace LightroomSync
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = bgDark;
             ForeColor = textPrimary;
-            ClientSize = new Size(520, 420);
+            ClientSize = new Size(456, 280);
             Controls.Add(mainPanel);
             Controls.Add(menuStrip1);
             FormBorderStyle = FormBorderStyle.FixedSingle;

@@ -410,13 +410,15 @@ namespace LightroomSync
             CleanupOldLogs();
         }
 
-        private const int FormWidth = 720;
-        private const int HeightWithActivity = 480;
-        private const int HeightWithoutActivity = 220;
+        private const int FormWidth = 456;
+        private const int HeightWithoutActivity = 312;
+        private const int HeightWithActivity = 588;
 
         private void ApplyFormSize()
         {
-            var h = activityPanel.Visible ? HeightWithActivity : HeightWithoutActivity;
+            var showActivity = config.ShowActivityLog;
+            var h = showActivity ? HeightWithActivity : HeightWithoutActivity;
+            activityPanel.Visible = showActivity;
             ClientSize = new Size(FormWidth, h);
             MinimumSize = MaximumSize = new Size(FormWidth, h);
         }
@@ -445,7 +447,6 @@ namespace LightroomSync
         {
             config.ShowActivityLog = !config.ShowActivityLog;
             showActivityLogToolStripMenuItem.Checked = config.ShowActivityLog;
-            activityPanel.Visible = config.ShowActivityLog;
             ApplyFormSize();
             File.WriteAllText(ConfigFileName, config.ToJson());
         }
@@ -810,20 +811,22 @@ namespace LightroomSync
                 await UploadCatalogs();
                 hasDealtWithLightroomOpen = false;
                 SetStatus("Syncing");
-                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                SetStatusStrip("Successfully uploaded", ApertureIconState.Idle);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == false)
             {
-                SetStatus("Checking for updates...");
-                SetStatusStrip("Checking for updates...", ApertureIconState.Idle);
+                SetStatus("Syncing");
+                if (statusStripLabel.Text != "Successfully uploaded")
+                    SetStatusStrip("Checking for updates...", ApertureIconState.Idle);
                 timer1.Enabled = false;
                 Status? loadedStatus = getNetworkStatus();
                 if (loadedStatus == null)
                 {
                     SetStatus("Syncing");
-                    SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                    if (statusStripLabel.Text != "Successfully uploaded")
+                        SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -832,7 +835,8 @@ namespace LightroomSync
                 if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
                 {
                     SetStatus("Syncing");
-                    SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                    if (statusStripLabel.Text != "Successfully uploaded")
+                        SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                     timer1.Enabled = true;
                     timerBeingHandled = false;
                     return;
@@ -908,7 +912,8 @@ namespace LightroomSync
                         {
                             Log("Backup folder not set. Please set Backup Folder and try again. Aborting update.");
                             SetStatus("Syncing");
-                            SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                            if (statusStripLabel.Text != "Successfully uploaded")
+                                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                             timer1.Enabled = true;
                             timerBeingHandled = false;
                             return;
@@ -986,7 +991,8 @@ namespace LightroomSync
                 }
 
                 SetStatus("Syncing");
-                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                if (statusStripLabel.Text != "Successfully uploaded")
+                    SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }

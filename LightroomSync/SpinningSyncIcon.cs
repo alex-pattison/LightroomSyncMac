@@ -253,11 +253,11 @@ namespace LightroomSync
                     break;
                 case ApertureIconState.LightroomOpen:
                     attrs.SetColorMatrix(new ColorMatrix(new float[][] {
-                        new float[] { 0.4f, 0, 0, 0, 0 },
-                        new float[] { 0, 1f, 0, 0, 0 },
-                        new float[] { 0, 0, 0.4f, 0, 0 },
+                        new float[] { 0.6f, 0, 0, 0, 0 },
+                        new float[] { 0, 0.8f, 0, 0, 0 },
+                        new float[] { 0, 0, 0.6f, 0, 0 },
                         new float[] { 0, 0, 0, 1f, 0 },
-                        new float[] { 0, 0.2f, 0, 0, 1 }
+                        new float[] { 0.05f, 0.12f, 0.05f, 0, 1 }
                     }));
                     break;
                 case ApertureIconState.Warning:
