@@ -2,15 +2,8 @@ namespace LightroomSync
 {
     partial class Form1
     {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        ///  Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -23,32 +16,27 @@ namespace LightroomSync
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            label1 = new Label();
-            localFolderTextBox = new TextBox();
-            label2 = new Label();
-            networkFolderTextBox = new TextBox();
-            labelBackupFolder = new Label();
-            backupFolderTextBox = new TextBox();
-            buttonSelectBackupFolder = new Button();
-            label3 = new Label();
-            buttonStartSync = new Button();
-            testOutOfSyncToolStripMenuItem = new ToolStripMenuItem();
-            eventsTextBox = new TextBox();
-            buttonSelectLocalFolder = new Button();
-            buttonSelectNetworkFolder = new Button();
-            timer1 = new System.Windows.Forms.Timer(components);
+            var resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+
+            var bgDark = Color.FromArgb(24, 24, 26);
+            var panelBg = Color.FromArgb(32, 32, 36);
+            var inputBg = Color.FromArgb(43, 43, 48);
+            var textPrimary = Color.FromArgb(241, 241, 243);
+            var textMuted = Color.FromArgb(161, 161, 170);
+            var accent = Color.FromArgb(0, 122, 204);
+            var spacing = 20;
+
+            var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(spacing), BackColor = bgDark };
+
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
+            settingsToolStripMenuItem = new ToolStripMenuItem();
             launchAtStartupToolStripMenuItem = new ToolStripMenuItem();
             autoCheckForUpdatesToolStripMenuItem = new ToolStripMenuItem();
+            testOutOfSyncToolStripMenuItem = new ToolStripMenuItem();
             minimizeToTrayToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
@@ -56,285 +44,180 @@ namespace LightroomSync
             gitHubPageToolStripMenuItem = new ToolStripMenuItem();
             checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
-            menuStrip1.SuspendLayout();
-            SuspendLayout();
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.ForeColor = Color.WhiteSmoke;
-            label1.Location = new Point(14, 52);
-            label1.Name = "label1";
-            label1.Size = new Size(90, 20);
-            label1.TabIndex = 0;
-            label1.Text = "Local Folder";
-            label1.Click += label1_Click;
-            // 
-            // localFolderTextBox
-            // 
-            localFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-            localFolderTextBox.ForeColor = Color.WhiteSmoke;
-            localFolderTextBox.Location = new Point(14, 76);
-            localFolderTextBox.Margin = new Padding(3, 4, 3, 4);
-            localFolderTextBox.Name = "localFolderTextBox";
-            localFolderTextBox.Size = new Size(865, 27);
-            localFolderTextBox.TabIndex = 1;
-            localFolderTextBox.TextChanged += localFolderTextBox_TextChanged;
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.ForeColor = Color.WhiteSmoke;
-            label2.Location = new Point(14, 132);
-            label2.Name = "label2";
-            label2.Size = new Size(111, 20);
-            label2.TabIndex = 2;
-            label2.Text = "Network Folder";
-            // 
-            // networkFolderTextBox
-            // 
-            networkFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-            networkFolderTextBox.ForeColor = Color.WhiteSmoke;
-            networkFolderTextBox.Location = new Point(14, 156);
-            networkFolderTextBox.Margin = new Padding(3, 4, 3, 4);
-            networkFolderTextBox.Name = "networkFolderTextBox";
-            networkFolderTextBox.Size = new Size(865, 27);
-            networkFolderTextBox.TabIndex = 3;
-            networkFolderTextBox.Text = "";
-            networkFolderTextBox.TextChanged += networkFolderTextBox_TextChanged;
-            // 
-            // labelBackupFolder
-            // 
-            labelBackupFolder.AutoSize = true;
-            labelBackupFolder.ForeColor = Color.WhiteSmoke;
-            labelBackupFolder.Location = new Point(14, 212);
-            labelBackupFolder.Name = "labelBackupFolder";
-            labelBackupFolder.Size = new Size(106, 20);
-            labelBackupFolder.TabIndex = 4;
-            labelBackupFolder.Text = "Backup Folder";
-            // 
-            // backupFolderTextBox
-            // 
-            backupFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-            backupFolderTextBox.ForeColor = Color.WhiteSmoke;
-            backupFolderTextBox.Location = new Point(14, 236);
-            backupFolderTextBox.Margin = new Padding(3, 4, 3, 4);
-            backupFolderTextBox.Name = "backupFolderTextBox";
-            backupFolderTextBox.Size = new Size(865, 27);
-            backupFolderTextBox.TabIndex = 5;
-            backupFolderTextBox.TextChanged += backupFolderTextBox_TextChanged;
-            // 
-            // buttonSelectBackupFolder
-            // 
-            buttonSelectBackupFolder.Location = new Point(886, 236);
-            buttonSelectBackupFolder.Margin = new Padding(3, 4, 3, 4);
-            buttonSelectBackupFolder.Name = "buttonSelectBackupFolder";
-            buttonSelectBackupFolder.Size = new Size(24, 31);
-            buttonSelectBackupFolder.TabIndex = 10;
-            buttonSelectBackupFolder.UseVisualStyleBackColor = true;
-            buttonSelectBackupFolder.Click += buttonSelectBackupFolder_Click;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.ForeColor = Color.WhiteSmoke;
-            label3.Location = new Point(14, 292);
-            label3.Name = "label3";
-            label3.Size = new Size(51, 20);
-            label3.TabIndex = 4;
-            label3.Text = "Events";
-            // 
-            // buttonStartSync
-            // 
-            buttonStartSync.BackColor = Color.FromArgb(0, 120, 215);
-            buttonStartSync.FlatStyle = FlatStyle.Flat;
-            buttonStartSync.FlatAppearance.BorderColor = Color.FromArgb(0, 90, 160);
-            buttonStartSync.ForeColor = Color.White;
-            buttonStartSync.Location = new Point(780, 285);
-            buttonStartSync.Name = "buttonStartSync";
-            buttonStartSync.Size = new Size(120, 35);
-            buttonStartSync.TabIndex = 11;
+
+            // --- Dashboard: Status + Actions ---
+            var dashboardPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                Padding = new Padding(spacing),
+                BackColor = panelBg
+            };
+
+            statusLabel = new Label();
+            statusLabel.Text = "Idle";
+            statusLabel.ForeColor = textMuted;
+            statusLabel.Font = new Font("Segoe UI", 11F);
+            statusLabel.Location = new Point(spacing, 18);
+            statusLabel.AutoSize = true;
+
+            buttonSettings = new Button();
+            buttonSettings.Text = "Settings";
+            buttonSettings.FlatStyle = FlatStyle.Flat;
+            buttonSettings.BackColor = inputBg;
+            buttonSettings.ForeColor = textPrimary;
+            buttonSettings.Font = new Font("Segoe UI", 9F);
+            buttonSettings.FlatAppearance.BorderColor = Color.FromArgb(60, 60, 66);
+            buttonSettings.Size = new Size(90, 36);
+            buttonSettings.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            buttonSettings.Click += buttonSettings_Click;
+
+            buttonStartSync = new Button();
             buttonStartSync.Text = "Start Sync";
+            buttonStartSync.FlatStyle = FlatStyle.Flat;
+            buttonStartSync.BackColor = accent;
+            buttonStartSync.ForeColor = Color.White;
+            buttonStartSync.Font = new Font("Segoe UI Semibold", 10F);
+            buttonStartSync.FlatAppearance.BorderSize = 0;
+            buttonStartSync.Size = new Size(120, 36);
+            buttonStartSync.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             buttonStartSync.Click += buttonStartSync_Click;
-            // 
-            // eventsTextBox
-            // 
-            eventsTextBox.BackColor = Color.FromArgb(45, 45, 45);
-            eventsTextBox.ForeColor = Color.WhiteSmoke;
-            eventsTextBox.Location = new Point(14, 316);
-            eventsTextBox.Margin = new Padding(3, 4, 3, 4);
+
+            // --- Activity log ---
+            var activityPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0), BackColor = bgDark };
+
+            var activityHeader = new Panel { Dock = DockStyle.Top, Height = 28, BackColor = bgDark };
+
+            labelActivity = new Label();
+            labelActivity.Text = "Activity";
+            labelActivity.ForeColor = textMuted;
+            labelActivity.Font = new Font("Segoe UI", 9F);
+            labelActivity.Location = new Point(0, 4);
+            labelActivity.AutoSize = true;
+
+            eventsTextBox = new TextBox();
+            eventsTextBox.BackColor = inputBg;
+            eventsTextBox.ForeColor = textPrimary;
+            eventsTextBox.BorderStyle = BorderStyle.FixedSingle;
+            eventsTextBox.Font = new Font("Consolas", 9F);
             eventsTextBox.Multiline = true;
-            eventsTextBox.Name = "eventsTextBox";
             eventsTextBox.ScrollBars = ScrollBars.Vertical;
-            eventsTextBox.Size = new Size(886, 167);
-            eventsTextBox.TabIndex = 5;
-            // 
-            // buttonSelectLocalFolder
-            // 
-            buttonSelectLocalFolder.Location = new Point(886, 76);
-            buttonSelectLocalFolder.Margin = new Padding(3, 4, 3, 4);
-            buttonSelectLocalFolder.Name = "buttonSelectLocalFolder";
-            buttonSelectLocalFolder.Size = new Size(24, 31);
-            buttonSelectLocalFolder.TabIndex = 8;
-            buttonSelectLocalFolder.UseVisualStyleBackColor = true;
-            buttonSelectLocalFolder.Click += buttonSelectLocalFolder_Click;
-            // 
-            // buttonSelectNetworkFolder
-            // 
-            buttonSelectNetworkFolder.Location = new Point(886, 156);
-            buttonSelectNetworkFolder.Margin = new Padding(3, 4, 3, 4);
-            buttonSelectNetworkFolder.Name = "buttonSelectNetworkFolder";
-            buttonSelectNetworkFolder.Size = new Size(24, 31);
-            buttonSelectNetworkFolder.TabIndex = 9;
-            buttonSelectNetworkFolder.UseVisualStyleBackColor = true;
-            buttonSelectNetworkFolder.Click += buttonSelectNetworkFolder_Click;
-            // 
-            // timer1
-            // 
-            timer1.Enabled = false;
-            timer1.Interval = 5000;
+            eventsTextBox.Dock = DockStyle.Fill;
+
+            timer1 = new System.Windows.Forms.Timer(components) { Interval = 5000, Enabled = false };
             timer1.Tick += timer1_Tick;
-            // 
-            // menuStrip1
-            // 
-            menuStrip1.ImageScalingSize = new Size(20, 20);
+
+            // --- Menu ---
+            menuStrip1.BackColor = panelBg;
+            menuStrip1.ForeColor = textPrimary;
+            menuStrip1.Font = new Font("Segoe UI", 9F);
             menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, helpToolStripMenuItem });
-            menuStrip1.Location = new Point(0, 0);
-            menuStrip1.Name = "menuStrip1";
-            menuStrip1.Padding = new Padding(7, 3, 0, 3);
-            menuStrip1.Size = new Size(914, 30);
-            menuStrip1.TabIndex = 10;
-            menuStrip1.Text = "menuStrip1";
-            menuStrip1.BackColor = Color.FromArgb(45, 45, 45);
-            menuStrip1.ForeColor = Color.WhiteSmoke;
-            // 
-            // fileToolStripMenuItem
-            // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { launchAtStartupToolStripMenuItem, autoCheckForUpdatesToolStripMenuItem, testOutOfSyncToolStripMenuItem, minimizeToTrayToolStripMenuItem, exitToolStripMenuItem });
-            fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(46, 24);
+
             fileToolStripMenuItem.Text = "File";
-            // 
-            // launchAtStartupToolStripMenuItem
-            // 
-            launchAtStartupToolStripMenuItem.Name = "launchAtStartupToolStripMenuItem";
-            launchAtStartupToolStripMenuItem.Size = new Size(251, 26);
-            launchAtStartupToolStripMenuItem.Text = "Launch At Startup";
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                settingsToolStripMenuItem,
+                launchAtStartupToolStripMenuItem,
+                autoCheckForUpdatesToolStripMenuItem,
+                testOutOfSyncToolStripMenuItem,
+                minimizeToTrayToolStripMenuItem,
+                exitToolStripMenuItem
+            });
+
+            settingsToolStripMenuItem.Text = "Settings...";
+            settingsToolStripMenuItem.Click += settingsToolStripMenuItem_Click;
+
+            launchAtStartupToolStripMenuItem.Text = "Launch at startup";
             launchAtStartupToolStripMenuItem.Click += launchAtStartupToolStripMenuItem_Click;
-            // 
-            // autoCheckForUpdatesToolStripMenuItem
-            // 
-            autoCheckForUpdatesToolStripMenuItem.Name = "autoCheckForUpdatesToolStripMenuItem";
-            autoCheckForUpdatesToolStripMenuItem.Size = new Size(251, 26);
-            autoCheckForUpdatesToolStripMenuItem.Text = "Auto Check For Updates";
+
+            autoCheckForUpdatesToolStripMenuItem.Text = "Auto-check for updates";
             autoCheckForUpdatesToolStripMenuItem.Click += autoCheckForUpdatesToolStripMenuItem_Click;
-            // 
-            // testOutOfSyncToolStripMenuItem
-            // 
-            testOutOfSyncToolStripMenuItem.Name = "testOutOfSyncToolStripMenuItem";
-            testOutOfSyncToolStripMenuItem.Size = new Size(251, 26);
-            testOutOfSyncToolStripMenuItem.Text = "Test Out of Sync";
+
+            testOutOfSyncToolStripMenuItem.Text = "Test out of sync...";
             testOutOfSyncToolStripMenuItem.Click += testOutOfSyncToolStripMenuItem_Click;
-            // 
-            // minimizeToTrayToolStripMenuItem
-            // 
-            minimizeToTrayToolStripMenuItem.Name = "minimizeToTrayToolStripMenuItem";
-            minimizeToTrayToolStripMenuItem.Size = new Size(251, 26);
-            minimizeToTrayToolStripMenuItem.Text = "Minimize To Tray";
+
+            minimizeToTrayToolStripMenuItem.Text = "Minimize to tray";
             minimizeToTrayToolStripMenuItem.Click += minimizeToTrayToolStripMenuItem_Click;
-            // 
-            // exitToolStripMenuItem
-            // 
-            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(251, 26);
+
             exitToolStripMenuItem.Text = "E&xit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
-            // 
-            // helpToolStripMenuItem
-            // 
-            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { submitABugToolStripMenuItem, gitHubPageToolStripMenuItem, checkForUpdatesToolStripMenuItem, aboutToolStripMenuItem });
-            helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            helpToolStripMenuItem.Size = new Size(55, 24);
+
             helpToolStripMenuItem.Text = "Help";
-            // 
-            // submitABugToolStripMenuItem
-            // 
-            submitABugToolStripMenuItem.Name = "submitABugToolStripMenuItem";
-            submitABugToolStripMenuItem.Size = new Size(215, 26);
-            submitABugToolStripMenuItem.Text = "Submit A Bug";
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                submitABugToolStripMenuItem,
+                gitHubPageToolStripMenuItem,
+                checkForUpdatesToolStripMenuItem,
+                aboutToolStripMenuItem
+            });
+
+            submitABugToolStripMenuItem.Text = "Submit a bug";
             submitABugToolStripMenuItem.Click += submitABugToolStripMenuItem_Click;
-            // 
-            // gitHubPageToolStripMenuItem
-            // 
-            gitHubPageToolStripMenuItem.Name = "gitHubPageToolStripMenuItem";
-            gitHubPageToolStripMenuItem.Size = new Size(215, 26);
-            gitHubPageToolStripMenuItem.Text = "GitHub Page";
+
+            gitHubPageToolStripMenuItem.Text = "GitHub";
             gitHubPageToolStripMenuItem.Click += gitHubPageToolStripMenuItem_Click;
-            // 
-            // checkForUpdatesToolStripMenuItem
-            // 
-            checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(215, 26);
-            checkForUpdatesToolStripMenuItem.Text = "Check For Updates";
+
+            checkForUpdatesToolStripMenuItem.Text = "Check for updates";
             checkForUpdatesToolStripMenuItem.Click += checkForUpdatesToolStripMenuItem_Click;
-            // 
-            // aboutToolStripMenuItem
-            // 
-            aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            aboutToolStripMenuItem.Size = new Size(215, 26);
+
             aboutToolStripMenuItem.Text = "About";
             aboutToolStripMenuItem.Click += aboutToolStripMenuItem_Click;
-            // 
-            // Form1
-            // 
+
+            activityHeader.Controls.Add(labelActivity);
+
+            // --- Layout --- (Fill first, then Top)
+            activityPanel.Controls.Add(eventsTextBox);
+            activityPanel.Controls.Add(activityHeader);
+
+            statusLabel.Location = new Point(spacing, 22);
+            buttonSettings.Location = new Point(280, 12);
+            buttonStartSync.Location = new Point(380, 12);
+
+            dashboardPanel.Controls.Add(statusLabel);
+            dashboardPanel.Controls.Add(buttonSettings);
+            dashboardPanel.Controls.Add(buttonStartSync);
+
+            mainPanel.Controls.Add(activityPanel);
+            mainPanel.Controls.Add(dashboardPanel);
+
+            dashboardPanel.Resize += (s, e) =>
+            {
+                var w = dashboardPanel.ClientSize.Width;
+                buttonStartSync.Left = w - spacing - 120;
+                buttonSettings.Left = w - spacing - 220;
+            };
+
+            // --- Form ---
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(914, 510);
-            Controls.Add(buttonStartSync);
-            Controls.Add(buttonSelectBackupFolder);
-            Controls.Add(buttonSelectNetworkFolder);
-            Controls.Add(buttonSelectLocalFolder);
-            Controls.Add(eventsTextBox);
-            Controls.Add(label3);
-            Controls.Add(backupFolderTextBox);
-            Controls.Add(labelBackupFolder);
-            Controls.Add(networkFolderTextBox);
-            Controls.Add(label2);
-            Controls.Add(localFolderTextBox);
-            Controls.Add(label1);
+            BackColor = bgDark;
+            ForeColor = textPrimary;
+            ClientSize = new Size(520, 420);
+            Controls.Add(mainPanel);
             Controls.Add(menuStrip1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             MainMenuStrip = menuStrip1;
-            Margin = new Padding(3, 4, 3, 4);
+            MinimumSize = new Size(420, 320);
             Name = "Form1";
-            Text = "Lightroom Sync+ - DEV";
-            BackColor = Color.FromArgb(64, 64, 64);
-            ForeColor = Color.WhiteSmoke;
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Lightroom Sync+";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
-            menuStrip1.ResumeLayout(false);
-            menuStrip1.PerformLayout();
+
+            SuspendLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
-        private Label label1;
-        private TextBox localFolderTextBox;
-        private Label label2;
-        private TextBox networkFolderTextBox;
-        private Label labelBackupFolder;
-        private TextBox backupFolderTextBox;
-        private Button buttonSelectBackupFolder;
-        private Label label3;
+        private Label statusLabel;
+        private Button buttonSettings;
         private Button buttonStartSync;
+        private Label labelActivity;
         private TextBox eventsTextBox;
-        private Button buttonSelectLocalFolder;
-        private Button buttonSelectNetworkFolder;
         private System.Windows.Forms.Timer timer1;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
+        private ToolStripMenuItem settingsToolStripMenuItem;
         private ToolStripMenuItem launchAtStartupToolStripMenuItem;
         private ToolStripMenuItem testOutOfSyncToolStripMenuItem;
         private ToolStripMenuItem helpToolStripMenuItem;

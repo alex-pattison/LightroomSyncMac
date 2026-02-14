@@ -291,6 +291,9 @@ namespace LightroomSync
 
             // Create a context menu for the tray icon
             trayMenu = new ContextMenuStrip();
+            trayMenu.BackColor = Color.FromArgb(32, 32, 36);
+            trayMenu.ForeColor = Color.FromArgb(241, 241, 243);
+            trayMenu.Font = new System.Drawing.Font("Segoe UI", 9F);
             trayMenu.Items.Add("Restore", null, OnRestore);
             trayMenu.Items.Add("Exit", null, OnExit);
 
@@ -336,23 +339,16 @@ namespace LightroomSync
             }
         }
 
-        private async void label1_Click(object sender, EventArgs e)
-        {
-            await UploadCatalogs();
-        }
-
         private const string ConfigFileName = "config.txt";
 
         private void Form1_Load(object sender, EventArgs e)
         {
             if (File.Exists(ConfigFileName))
             {
-
                 string jsonContent = File.ReadAllText(ConfigFileName);
                 try
                 {
                     Config? loadedConfig = JsonConvert.DeserializeObject<Config>(jsonContent);
-
                     if (loadedConfig != null)
                     {
                         config = loadedConfig;
@@ -364,35 +360,45 @@ namespace LightroomSync
                         Log("JSON deserialization failed");
                     }
                 }
-                catch (JsonException ex)
-                {
-                    Log("JSON parsing error: " + ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    Log("Unexpected error: " + ex.Message);
-                }
+                catch (JsonException ex) { Log("JSON parsing error: " + ex.Message); }
+                catch (Exception ex) { Log("Unexpected error: " + ex.Message); }
             }
 
-            localFolderTextBox.Text = config.LocalFolder ?? "";
-            networkFolderTextBox.Text = config.NetworkFolder ?? "";
-            backupFolderTextBox.Text = config.BackupFolder ?? "";
-
-            status.LastUser = System.Environment.MachineName;
+            status.LastUser = Environment.MachineName;
 
             if (Utils.ShortcutExistsInStartupFolder())
-            {
                 launchAtStartupToolStripMenuItem.Image = Resources.checkmark;
-            }
 
             if (config.AutoCheckForUpdates)
-            {
                 autoCheckForUpdatesToolStripMenuItem.Image = Resources.checkmark;
-            }
         }
 
         private void buttonStartSync_Click(object sender, EventArgs e)
         {
+            if (timer1.Enabled)
+            {
+                // Stop sync
+                timer1.Enabled = false;
+                buttonStartSync.Text = "Start Sync";
+                statusLabel.Text = "Idle";
+                Log("Sync monitoring stopped.");
+                return;
+            }
+
+            // Validate paths before starting
+            if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
+            {
+                MessageBox.Show("Please configure a valid local catalog folder in Settings.", "Settings Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                OpenSettings();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(config.NetworkFolder) || !Directory.Exists(config.NetworkFolder))
+            {
+                MessageBox.Show("Please configure a valid sync folder in Settings.", "Settings Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                OpenSettings();
+                return;
+            }
+
             var result = MessageBox.Show(
                 "Start sync monitoring? This will watch for Lightroom to close and sync catalogs with the network.",
                 "Confirm Start",
@@ -401,11 +407,21 @@ namespace LightroomSync
             if (result == DialogResult.Yes)
             {
                 timer1.Enabled = true;
-                buttonStartSync.Enabled = false;
-                buttonStartSync.Text = "Sync Active";
+                buttonStartSync.Text = "Stop Sync";
+                statusLabel.Text = "Syncing";
                 Log("Sync monitoring started.");
             }
         }
+
+        private void OpenSettings()
+        {
+            using var dlg = new SettingsDialog(config);
+            dlg.ShowDialog(this);
+        }
+
+        private void buttonSettings_Click(object sender, EventArgs e) => OpenSettings();
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e) => OpenSettings();
 
         private async void testOutOfSyncToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -469,89 +485,6 @@ namespace LightroomSync
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             File.WriteAllText(ConfigFileName, config.ToJson());
-        }
-
-        private void localFolderTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (Directory.Exists(localFolderTextBox.Text))
-            {
-                localFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-                config.LocalFolder = localFolderTextBox.Text;
-            }
-            else
-            {
-                localFolderTextBox.BackColor = Color.FromArgb(80, 45, 45);
-            }
-        }
-
-        private void networkFolderTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (Directory.Exists(networkFolderTextBox.Text))
-            {
-                networkFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-                config.NetworkFolder = networkFolderTextBox.Text;
-            }
-            else
-            {
-                networkFolderTextBox.BackColor = Color.FromArgb(80, 45, 45);
-            }
-        }
-
-        private void backupFolderTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(backupFolderTextBox.Text) || Directory.Exists(backupFolderTextBox.Text))
-            {
-                backupFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
-                config.BackupFolder = backupFolderTextBox.Text.Trim();
-            }
-            else
-            {
-                backupFolderTextBox.BackColor = Color.FromArgb(80, 45, 45);
-            }
-        }
-
-        private void buttonSelectLocalFolder_Click(object sender, EventArgs e)
-        {
-            using (var folderBrowserDialog = new FolderBrowserDialog())
-            {
-                // Show the folder browser dialog
-                DialogResult result = folderBrowserDialog.ShowDialog();
-
-                // Check if the user selected a folder
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(folderBrowserDialog.SelectedPath))
-                {
-                    // Update the text box with the selected folder path
-                    localFolderTextBox.Text = folderBrowserDialog.SelectedPath;
-                }
-            }
-        }
-
-        private void buttonSelectNetworkFolder_Click(object sender, EventArgs e)
-        {
-            using (var folderBrowserDialog = new FolderBrowserDialog())
-            {
-                // Show the folder browser dialog
-                DialogResult result = folderBrowserDialog.ShowDialog();
-
-                // Check if the user selected a folder
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(folderBrowserDialog.SelectedPath))
-                {
-                    // Update the text box with the selected folder path
-                    networkFolderTextBox.Text = folderBrowserDialog.SelectedPath;
-                }
-            }
-        }
-
-        private void buttonSelectBackupFolder_Click(object sender, EventArgs e)
-        {
-            using (var folderBrowserDialog = new FolderBrowserDialog())
-            {
-                DialogResult result = folderBrowserDialog.ShowDialog();
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(folderBrowserDialog.SelectedPath))
-                {
-                    backupFolderTextBox.Text = folderBrowserDialog.SelectedPath;
-                }
-            }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
