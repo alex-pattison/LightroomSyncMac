@@ -1,6 +1,6 @@
-# LightroomSync – Developer Setup Guide
+# Lightroom Sync+ – Developer Setup Guide
 
-A guide to building and running your own instance of LightroomSync for development and testing.
+A guide to building and running Lightroom Sync+ for development and testing.
 
 ---
 
@@ -17,7 +17,7 @@ A guide to building and running your own instance of LightroomSync for developme
 From the project root:
 
 ```powershell
-cd h:\GitHub\LightroomSyncMac
+cd h:\GitHub\LightroomSyncPlus
 dotnet build LightroomSync.sln
 ```
 
@@ -45,7 +45,7 @@ dotnet run --project LightroomSync\LightroomSync.csproj -- tray
 2. **Local Folder** – where your Lightroom catalogs live (e.g. `C:\Users\<You>\Pictures\Lightroom`).
 3. **Network Folder** – shared location (e.g. Google Drive path like `G:\My Drive\Lightroom` or `P:\Lightroom`).
 
-The config is saved to `%AppData%\LightroomSync\config.txt` when you close the app. Working files (zips, temp data) go there too.
+The config is saved to `%AppData%\LightroomSyncPlusDev\config.txt` when you close the app (Debug build). Working files (zips, temp data) go there too. Release builds use `%AppData%\LightroomSyncPlus`.
 
 ---
 
@@ -71,7 +71,7 @@ To avoid touching your real catalog:
    ```
    (or any local folder that will act as the “network” share).
 
-4. In LightroomSync, set:
+4. In Lightroom Sync+, set:
    - **Local Folder:** `D:\Dev\LightroomTest`
    - **Network Folder:** `D:\Dev\LightroomSync\Network`
 
@@ -88,7 +88,7 @@ To avoid touching your real catalog:
 ## Project Layout
 
 ```
-LightroomSyncMac/
+LightroomSyncPlus/
 ├── LightroomSync.sln
 ├── LightroomSync/
 │   ├── LightroomSync.csproj
@@ -109,13 +109,14 @@ LightroomSyncMac/
 
 ## Config File (`config.txt`)
 
-When the app closes, it writes config to `%AppData%\LightroomSync\config.txt`:
+When the app closes, it writes config to `%AppData%\LightroomSyncPlusDev\config.txt` (Debug) or `%AppData%\LightroomSyncPlus\config.txt` (Release):
 
 ```json
 {
   "LocalFolder": "C:\\Users\\You\\Pictures\\Lightroom",
   "NetworkFolder": "G:\\My Drive\\Lightroom",
-  "AutoCheckForUpdates": true
+  "AutoCheckForUpdates": true,
+  "BackupFolder": "C:\\\\Users\\\\You\\\\Pictures\\\\LightroomBackups"
 }
 ```
 

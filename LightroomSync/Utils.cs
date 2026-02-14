@@ -42,12 +42,12 @@ namespace LightroomSync
         public static void CreateShortcutInStartupFolder(string appPath)
         {
             string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSync.lnk");
+            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSyncPlus.lnk");
 
             IShellLinkW link = (IShellLinkW)new ShellLink();
             link.SetPath(appPath);
             link.SetWorkingDirectory(Path.GetDirectoryName(appPath) ?? "");
-            link.SetDescription("LightroomSync");
+            link.SetDescription("Lightroom Sync+");
             link.SetArguments("tray");
 
             ((IPersistFile)link).Save(shortcutPath, false);
@@ -56,7 +56,7 @@ namespace LightroomSync
         public static bool ShortcutExistsInStartupFolder()
         {
             string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSync.lnk");
+            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSyncPlus.lnk");
 
             return File.Exists(shortcutPath);
         }
@@ -64,14 +64,18 @@ namespace LightroomSync
         public static void DeleteShortcutFromStartupFolder()
         {
             string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSync.lnk");
+            string shortcutPath = Path.Combine(startupFolderPath, "LightroomSyncPlus.lnk");
 
             File.Delete(shortcutPath);
         }
 
         public static string GetWorkingDir()
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LightroomSync");
+#if DEBUG
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LightroomSyncPlusDev");
+#else
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LightroomSyncPlus");
+#endif
         }
 
         public static void OpenURL(string url)

@@ -11,13 +11,14 @@ namespace LightroomSync
     {
         public string LocalFolder { get; set; }
         public string NetworkFolder { get; set; }
+        public string BackupFolder { get; set; }
 
         public bool AutoCheckForUpdates { get; set; }
 
         public Config() { 
-            // DEV build: empty paths so prod catalog is never touched
-            this.LocalFolder = "";
-            this.NetworkFolder = "";
+            this.LocalFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\Lightroom";
+            this.NetworkFolder = "P:\\Lightroom";
+            this.BackupFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\LightroomBackups";
             this.AutoCheckForUpdates = true;
         }
         

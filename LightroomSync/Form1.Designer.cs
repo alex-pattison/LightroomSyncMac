@@ -35,7 +35,12 @@ namespace LightroomSync
             localFolderTextBox = new TextBox();
             label2 = new Label();
             networkFolderTextBox = new TextBox();
+            labelBackupFolder = new Label();
+            backupFolderTextBox = new TextBox();
+            buttonSelectBackupFolder = new Button();
             label3 = new Label();
+            buttonStartSync = new Button();
+            testOutOfSyncToolStripMenuItem = new ToolStripMenuItem();
             eventsTextBox = new TextBox();
             buttonSelectLocalFolder = new Button();
             buttonSelectNetworkFolder = new Button();
@@ -98,21 +103,65 @@ namespace LightroomSync
             networkFolderTextBox.Text = "";
             networkFolderTextBox.TextChanged += networkFolderTextBox_TextChanged;
             // 
+            // labelBackupFolder
+            // 
+            labelBackupFolder.AutoSize = true;
+            labelBackupFolder.ForeColor = Color.WhiteSmoke;
+            labelBackupFolder.Location = new Point(14, 212);
+            labelBackupFolder.Name = "labelBackupFolder";
+            labelBackupFolder.Size = new Size(106, 20);
+            labelBackupFolder.TabIndex = 4;
+            labelBackupFolder.Text = "Backup Folder";
+            // 
+            // backupFolderTextBox
+            // 
+            backupFolderTextBox.BackColor = Color.FromArgb(45, 45, 45);
+            backupFolderTextBox.ForeColor = Color.WhiteSmoke;
+            backupFolderTextBox.Location = new Point(14, 236);
+            backupFolderTextBox.Margin = new Padding(3, 4, 3, 4);
+            backupFolderTextBox.Name = "backupFolderTextBox";
+            backupFolderTextBox.Size = new Size(865, 27);
+            backupFolderTextBox.TabIndex = 5;
+            backupFolderTextBox.TextChanged += backupFolderTextBox_TextChanged;
+            // 
+            // buttonSelectBackupFolder
+            // 
+            buttonSelectBackupFolder.Location = new Point(886, 236);
+            buttonSelectBackupFolder.Margin = new Padding(3, 4, 3, 4);
+            buttonSelectBackupFolder.Name = "buttonSelectBackupFolder";
+            buttonSelectBackupFolder.Size = new Size(24, 31);
+            buttonSelectBackupFolder.TabIndex = 10;
+            buttonSelectBackupFolder.UseVisualStyleBackColor = true;
+            buttonSelectBackupFolder.Click += buttonSelectBackupFolder_Click;
+            // 
             // label3
             // 
             label3.AutoSize = true;
             label3.ForeColor = Color.WhiteSmoke;
-            label3.Location = new Point(14, 219);
+            label3.Location = new Point(14, 292);
             label3.Name = "label3";
             label3.Size = new Size(51, 20);
             label3.TabIndex = 4;
             label3.Text = "Events";
             // 
+            // buttonStartSync
+            // 
+            buttonStartSync.BackColor = Color.FromArgb(0, 120, 215);
+            buttonStartSync.FlatStyle = FlatStyle.Flat;
+            buttonStartSync.FlatAppearance.BorderColor = Color.FromArgb(0, 90, 160);
+            buttonStartSync.ForeColor = Color.White;
+            buttonStartSync.Location = new Point(780, 285);
+            buttonStartSync.Name = "buttonStartSync";
+            buttonStartSync.Size = new Size(120, 35);
+            buttonStartSync.TabIndex = 11;
+            buttonStartSync.Text = "Start Sync";
+            buttonStartSync.Click += buttonStartSync_Click;
+            // 
             // eventsTextBox
             // 
             eventsTextBox.BackColor = Color.FromArgb(45, 45, 45);
             eventsTextBox.ForeColor = Color.WhiteSmoke;
-            eventsTextBox.Location = new Point(14, 243);
+            eventsTextBox.Location = new Point(14, 316);
             eventsTextBox.Margin = new Padding(3, 4, 3, 4);
             eventsTextBox.Multiline = true;
             eventsTextBox.Name = "eventsTextBox";
@@ -142,7 +191,7 @@ namespace LightroomSync
             // 
             // timer1
             // 
-            timer1.Enabled = true;
+            timer1.Enabled = false;
             timer1.Interval = 5000;
             timer1.Tick += timer1_Tick;
             // 
@@ -161,7 +210,7 @@ namespace LightroomSync
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { launchAtStartupToolStripMenuItem, autoCheckForUpdatesToolStripMenuItem, minimizeToTrayToolStripMenuItem, exitToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { launchAtStartupToolStripMenuItem, autoCheckForUpdatesToolStripMenuItem, testOutOfSyncToolStripMenuItem, minimizeToTrayToolStripMenuItem, exitToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(46, 24);
             fileToolStripMenuItem.Text = "File";
@@ -179,6 +228,13 @@ namespace LightroomSync
             autoCheckForUpdatesToolStripMenuItem.Size = new Size(251, 26);
             autoCheckForUpdatesToolStripMenuItem.Text = "Auto Check For Updates";
             autoCheckForUpdatesToolStripMenuItem.Click += autoCheckForUpdatesToolStripMenuItem_Click;
+            // 
+            // testOutOfSyncToolStripMenuItem
+            // 
+            testOutOfSyncToolStripMenuItem.Name = "testOutOfSyncToolStripMenuItem";
+            testOutOfSyncToolStripMenuItem.Size = new Size(251, 26);
+            testOutOfSyncToolStripMenuItem.Text = "Test Out of Sync";
+            testOutOfSyncToolStripMenuItem.Click += testOutOfSyncToolStripMenuItem_Click;
             // 
             // minimizeToTrayToolStripMenuItem
             // 
@@ -233,11 +289,15 @@ namespace LightroomSync
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(914, 435);
+            ClientSize = new Size(914, 510);
+            Controls.Add(buttonStartSync);
+            Controls.Add(buttonSelectBackupFolder);
             Controls.Add(buttonSelectNetworkFolder);
             Controls.Add(buttonSelectLocalFolder);
             Controls.Add(eventsTextBox);
             Controls.Add(label3);
+            Controls.Add(backupFolderTextBox);
+            Controls.Add(labelBackupFolder);
             Controls.Add(networkFolderTextBox);
             Controls.Add(label2);
             Controls.Add(localFolderTextBox);
@@ -247,7 +307,7 @@ namespace LightroomSync
             MainMenuStrip = menuStrip1;
             Margin = new Padding(3, 4, 3, 4);
             Name = "Form1";
-            Text = "Lightroom Sync - DEV";
+            Text = "Lightroom Sync+ - DEV";
             BackColor = Color.FromArgb(64, 64, 64);
             ForeColor = Color.WhiteSmoke;
             FormClosing += Form1_FormClosing;
@@ -264,7 +324,11 @@ namespace LightroomSync
         private TextBox localFolderTextBox;
         private Label label2;
         private TextBox networkFolderTextBox;
+        private Label labelBackupFolder;
+        private TextBox backupFolderTextBox;
+        private Button buttonSelectBackupFolder;
         private Label label3;
+        private Button buttonStartSync;
         private TextBox eventsTextBox;
         private Button buttonSelectLocalFolder;
         private Button buttonSelectNetworkFolder;
@@ -272,6 +336,7 @@ namespace LightroomSync
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem launchAtStartupToolStripMenuItem;
+        private ToolStripMenuItem testOutOfSyncToolStripMenuItem;
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem minimizeToTrayToolStripMenuItem;
         private ToolStripMenuItem exitToolStripMenuItem;

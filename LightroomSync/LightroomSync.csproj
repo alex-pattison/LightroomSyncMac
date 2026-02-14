@@ -3,13 +3,15 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>LightroomSyncPlus</AssemblyName>
+    <Product>Lightroom Sync+</Product>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>Copyright 2023 Anthony Bryan</Copyright>
-    <RepositoryUrl>https://github.com/software-2/LightroomSync</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/software-2/LightroomSync</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/alex-pattison/LightroomSyncPlus</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/alex-pattison/LightroomSyncPlus</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>1.0.0</FileVersion>
