@@ -1,0 +1,15 @@
+---
+description: After any code change, terminate the app, rebuild, and relaunch
+globs: LightroomSync/**/*
+alwaysApply: true
+---
+
+# Lightroom Sync+ Build Workflow
+
+After every code change to this project:
+
+1. **Terminate** the running app: `Stop-Process -Name "LightroomSyncPlus" -Force -ErrorAction SilentlyContinue`
+2. **Rebuild**: `dotnet build LightroomSync\LightroomSync.csproj`
+3. **Launch**: `Start-Process "LightroomSync\bin\Debug\net8.0-windows\LightroomSyncPlus.exe"`
+
+Always run these steps so the user sees changes immediately.
