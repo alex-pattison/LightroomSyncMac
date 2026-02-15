@@ -25,10 +25,20 @@ namespace LightroomSync
         /// <summary>If true, show the activity log panel. Default false.</summary>
         public bool ShowActivityLog { get; set; } = false;
 
-        public Config() { 
-            this.LocalFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\Lightroom";
-            this.NetworkFolder = "P:\\Lightroom";
-            this.BackupFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\LightroomBackups";
+        public Config()
+        {
+            if (Utils.IsDevMode)
+            {
+                this.LocalFolder = "";
+                this.NetworkFolder = "";
+                this.BackupFolder = "";
+            }
+            else
+            {
+                this.LocalFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\Lightroom";
+                this.NetworkFolder = "P:\\Lightroom";
+                this.BackupFolder = "C:\\Users\\" + Environment.UserName + "\\Pictures\\LightroomBackups";
+            }
         }
         
         public string ToJson()

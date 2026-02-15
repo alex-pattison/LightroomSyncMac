@@ -239,8 +239,8 @@ namespace LightroomSync
             var (uploadOk, catalogName, uploadError) = TryGetValidatedCatalog();
             if (!uploadOk || string.IsNullOrEmpty(catalogName))
             {
-                Log("Upload aborted: " + (uploadError ?? "catalog validation failed"));
-                SetStatusStrip(uploadError ?? "Catalog validation failed", ApertureIconState.Error);
+                Log("Upload aborted: " + (uploadError ?? "Catalog mismatch"));
+                SetStatusStrip(uploadError ?? "Catalog mismatch", ApertureIconState.Error);
                 return;
             }
 
@@ -304,13 +304,15 @@ namespace LightroomSync
         public Form1(bool startMinimized)
         {
             InitializeComponent();
+            Text = Utils.IsDevMode ? "Lightroom Sync+ DEV" : "Lightroom Sync+ Beta";
+            debugToolStripMenuItem.Visible = Utils.IsDevMode;
 
             // Create the NotifyIcon instance
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "Lightroom Sync+ DEV";
+            trayIcon.Text = Utils.IsDevMode ? "Lightroom Sync+ DEV" : "Lightroom Sync+ Beta";
             try
             {
-                var (icon, bitmap) = SpinningSyncIcon.CreateAppIcon(ApertureIconState.Error, 32);
+                var (icon, bitmap) = SpinningSyncIcon.CreateAppIcon(Utils.IsDevMode ? ApertureIconState.Error : ApertureIconState.DimIdle, 32);
                 _trayIconBitmap = bitmap; // Keep alive so HICON remains valid
                 trayIcon.Icon = icon;
                 this.Icon = icon; // Window title bar and taskbar
@@ -529,8 +531,8 @@ namespace LightroomSync
             var (ok, catalogName, errorMsg) = TryGetValidatedCatalog();
             if (!ok)
             {
-                catalogLabel.Text = "Catalog mismatch - check Settings";
-                statusStripLabel.Text = errorMsg ?? "Catalog configuration error";
+                catalogLabel.Text = "Catalog mismatch";
+                statusStripLabel.Text = errorMsg ?? "Catalog mismatch";
                 spinningSyncIcon.State = ApertureIconState.Error;
                 return;
             }
@@ -554,11 +556,11 @@ namespace LightroomSync
             if (localNames.Length == 0)
                 return (true, null, null);
             if (localNames.Length > 1)
-                return (false, null, "Multiple catalogs in Local Folder; use exactly one.");
+                return (false, null, "Catalog mismatch");
             if (networkNames.Length > 1)
-                return (false, null, "Multiple catalogs on network; use exactly one.");
+                return (false, null, "Catalog mismatch");
             if (networkNames.Length == 1 && !string.Equals(localNames[0], networkNames[0], StringComparison.OrdinalIgnoreCase))
-                return (false, null, $"Catalog name mismatch: local \"{localNames[0]}\" vs network \"{networkNames[0]}\"");
+                return (false, null, "Catalog mismatch");
             return (true, localNames[0], null);
         }
 
@@ -711,6 +713,26 @@ namespace LightroomSync
                 RefreshCatalogDisplay();
             }
         }
+
+        private void testMismatchCatalogToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            catalogLabel.Text = "Catalog mismatch";
+            statusStripLabel.Text = "Catalog mismatch";
+            spinningSyncIcon.State = ApertureIconState.Error;
+        }
+
+        private void testIconStateToolStripMenuItem_Click(ApertureIconState state, string statusText)
+        {
+            catalogLabel.Text = "Syncing: TestCatalog";
+            SetStatusStrip(statusText, state);
+        }
+
+        private void testIconDimToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.DimIdle, "Ready");
+        private void testIconIdleToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Idle, "Watching for changes...");
+        private void testIconSpinningToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Active, "Syncing...");
+        private void testIconLightroomOpenToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.LightroomOpen, "Waiting for Lightroom to close...");
+        private void testIconUpdateAvailableToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Warning, "Newer catalog available");
+        private void testIconErrorToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Error, "Catalog mismatch");
 
         private async void testOutOfSyncToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1135,13 +1157,14 @@ namespace LightroomSync
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            var appName = Utils.IsDevMode ? "Lightroom Sync+ DEV" : "Lightroom Sync+ Beta";
             MessageBox.Show(
-                "Lightroom Sync+" + Environment.NewLine +
+                appName + Environment.NewLine +
                 "Fork of LightroomSync by Anthony Bryan." + Environment.NewLine +
                 Environment.NewLine +
                 "Version " + CurrentVersion + Environment.NewLine +
                 "https://github.com/alex-pattison/LightroomSyncPlus",
-                "About Lightroom Sync+",
+                "About " + appName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }

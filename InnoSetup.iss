@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Lightroom Sync+"
-#define MyAppVersion "0.0.2"
+#define MyAppVersion "0.0.5"
 #define MyAppPublisher "Alex Pattison"
 #define MyAppURL "https://github.com/alex-pattison/LightroomSyncPlus"
 #define MyAppExeName "LightroomSyncPlus.exe"

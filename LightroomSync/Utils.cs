@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -47,7 +48,7 @@ namespace LightroomSync
             IShellLinkW link = (IShellLinkW)new ShellLink();
             link.SetPath(appPath);
             link.SetWorkingDirectory(Path.GetDirectoryName(appPath) ?? "");
-            link.SetDescription("Lightroom Sync+");
+            link.SetDescription(IsDevMode ? "Lightroom Sync+ DEV" : "Lightroom Sync+ Beta");
             link.SetArguments("tray");
 
             ((IPersistFile)link).Save(shortcutPath, false);
@@ -69,13 +70,30 @@ namespace LightroomSync
             File.Delete(shortcutPath);
         }
 
+        /// <summary>True when running from the repo (H:\GitHub\LightroomSyncMac); false when running as installed Beta.</summary>
+        public static bool IsDevMode
+        {
+            get
+            {
+                var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+                return exeDir.IndexOf("LightroomSyncMac", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+        }
+
+        /// <summary>Dev: config in repo. Beta: config in %LocalAppData%\LightroomSyncPlus.</summary>
         public static string GetWorkingDir()
         {
-#if DEBUG
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LightroomSyncPlusDev");
-#else
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LightroomSyncPlus");
-#endif
+            if (IsDevMode)
+            {
+                var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+                var idx = exeDir.IndexOf("LightroomSyncMac", StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    var repoRoot = exeDir.Substring(0, idx + "LightroomSyncMac".Length);
+                    return Path.Combine(repoRoot, ".lightroom-sync-dev");
+                }
+            }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LightroomSyncPlus");
         }
 
         public static void OpenURL(string url)

@@ -35,7 +35,16 @@ namespace LightroomSync
             fileToolStripMenuItem = new ToolStripMenuItem();
             settingsToolStripMenuItem = new ToolStripMenuItem();
             launchAtStartupToolStripMenuItem = new ToolStripMenuItem();
+            debugToolStripMenuItem = new ToolStripMenuItem();
+            testMismatchCatalogToolStripMenuItem = new ToolStripMenuItem();
             testOutOfSyncToolStripMenuItem = new ToolStripMenuItem();
+            testIconStatesToolStripMenuItem = new ToolStripMenuItem();
+            testIconDimToolStripMenuItem = new ToolStripMenuItem();
+            testIconIdleToolStripMenuItem = new ToolStripMenuItem();
+            testIconSpinningToolStripMenuItem = new ToolStripMenuItem();
+            testIconLightroomOpenToolStripMenuItem = new ToolStripMenuItem();
+            testIconUpdateAvailableToolStripMenuItem = new ToolStripMenuItem();
+            testIconErrorToolStripMenuItem = new ToolStripMenuItem();
             minimizeToTrayToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
@@ -205,9 +214,42 @@ namespace LightroomSync
                 settingsToolStripMenuItem,
                 showActivityLogToolStripMenuItem,
                 launchAtStartupToolStripMenuItem,
-                testOutOfSyncToolStripMenuItem,
+                debugToolStripMenuItem,
                 minimizeToTrayToolStripMenuItem,
                 exitToolStripMenuItem
+            });
+
+            debugToolStripMenuItem.Text = "Debug";
+            testMismatchCatalogToolStripMenuItem.Text = "Test mismatch catalog";
+            testMismatchCatalogToolStripMenuItem.Click += testMismatchCatalogToolStripMenuItem_Click;
+            testOutOfSyncToolStripMenuItem.Text = "Test out of sync...";
+            testOutOfSyncToolStripMenuItem.Click += testOutOfSyncToolStripMenuItem_Click;
+            testIconStatesToolStripMenuItem.Text = "Test icon states";
+            testIconDimToolStripMenuItem.Text = "Dim";
+            testIconDimToolStripMenuItem.Click += testIconDimToolStripMenuItem_Click;
+            testIconIdleToolStripMenuItem.Text = "Idle";
+            testIconIdleToolStripMenuItem.Click += testIconIdleToolStripMenuItem_Click;
+            testIconSpinningToolStripMenuItem.Text = "Spinning";
+            testIconSpinningToolStripMenuItem.Click += testIconSpinningToolStripMenuItem_Click;
+            testIconLightroomOpenToolStripMenuItem.Text = "Lightroom open";
+            testIconLightroomOpenToolStripMenuItem.Click += testIconLightroomOpenToolStripMenuItem_Click;
+            testIconUpdateAvailableToolStripMenuItem.Text = "Update available";
+            testIconUpdateAvailableToolStripMenuItem.Click += testIconUpdateAvailableToolStripMenuItem_Click;
+            testIconErrorToolStripMenuItem.Text = "Error";
+            testIconErrorToolStripMenuItem.Click += testIconErrorToolStripMenuItem_Click;
+            debugToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                testMismatchCatalogToolStripMenuItem,
+                testOutOfSyncToolStripMenuItem,
+                new ToolStripSeparator(),
+                testIconStatesToolStripMenuItem
+            });
+            testIconStatesToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] {
+                testIconDimToolStripMenuItem,
+                testIconIdleToolStripMenuItem,
+                testIconSpinningToolStripMenuItem,
+                testIconLightroomOpenToolStripMenuItem,
+                testIconUpdateAvailableToolStripMenuItem,
+                testIconErrorToolStripMenuItem
             });
 
             showActivityLogToolStripMenuItem.Text = "Show activity log";
@@ -218,9 +260,6 @@ namespace LightroomSync
 
             launchAtStartupToolStripMenuItem.Text = "Launch at startup";
             launchAtStartupToolStripMenuItem.Click += launchAtStartupToolStripMenuItem_Click;
-
-            testOutOfSyncToolStripMenuItem.Text = "Test out of sync...";
-            testOutOfSyncToolStripMenuItem.Click += testOutOfSyncToolStripMenuItem_Click;
 
             minimizeToTrayToolStripMenuItem.Text = "Minimize to tray";
             minimizeToTrayToolStripMenuItem.Click += minimizeToTrayToolStripMenuItem_Click;
@@ -278,7 +317,7 @@ namespace LightroomSync
             MainMenuStrip = menuStrip1;
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Lightroom Sync+ DEV";
+            Text = "Lightroom Sync+";
             FormClosing += Form1_FormClosing;
             Load += Form1_Load;
 
@@ -304,7 +343,16 @@ namespace LightroomSync
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem settingsToolStripMenuItem;
         private ToolStripMenuItem launchAtStartupToolStripMenuItem;
+        private ToolStripMenuItem debugToolStripMenuItem;
+        private ToolStripMenuItem testMismatchCatalogToolStripMenuItem;
         private ToolStripMenuItem testOutOfSyncToolStripMenuItem;
+        private ToolStripMenuItem testIconStatesToolStripMenuItem;
+        private ToolStripMenuItem testIconDimToolStripMenuItem;
+        private ToolStripMenuItem testIconIdleToolStripMenuItem;
+        private ToolStripMenuItem testIconSpinningToolStripMenuItem;
+        private ToolStripMenuItem testIconLightroomOpenToolStripMenuItem;
+        private ToolStripMenuItem testIconUpdateAvailableToolStripMenuItem;
+        private ToolStripMenuItem testIconErrorToolStripMenuItem;
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem minimizeToTrayToolStripMenuItem;
         private ToolStripMenuItem exitToolStripMenuItem;
