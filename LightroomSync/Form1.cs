@@ -236,16 +236,25 @@ namespace LightroomSync
                 return;
             }
 
+            var (uploadOk, catalogName, uploadError) = TryGetValidatedCatalog();
+            if (!uploadOk || string.IsNullOrEmpty(catalogName))
+            {
+                Log("Upload aborted: " + (uploadError ?? "catalog validation failed"));
+                SetStatusStrip(uploadError ?? "Catalog validation failed", ApertureIconState.Error);
+                return;
+            }
 
-            string[] files = Directory.GetFiles(config.LocalFolder, "*.lrcat");
+            string file = Path.Combine(config.LocalFolder, catalogName + ".lrcat");
+            if (!File.Exists(file))
+            {
+                Log("Catalog file not found: " + file);
+                return;
+            }
 
             status.MostRecentVersions = new List<string>();
 
-            foreach (string file in files)
             {
-                string catName = Path.GetFileNameWithoutExtension(file);
-
-
+                string catName = catalogName;
                 string[] filesToZip = { config.LocalFolder + "\\" + catName + ".lrcat" };
                 string[] foldersToZip = { config.LocalFolder + "\\" + catName + ".lrcat-data", config.LocalFolder + "\\" + catName + " Helper.lrdata" };
 
@@ -289,7 +298,7 @@ namespace LightroomSync
             }
             config.LastSyncTime = DateTime.Now;
             RefreshLastSyncDisplay();
-            Log($"Upload complete — {files.Length} catalog(s) synced.");
+            Log($"Upload complete — {catalogName} synced.");
         }
 
         public Form1(bool startMinimized)
@@ -517,14 +526,72 @@ namespace LightroomSync
         private void RefreshCatalogDisplay()
         {
             if (InvokeRequired) { Invoke(RefreshCatalogDisplay); return; }
-            if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
+            var (ok, catalogName, errorMsg) = TryGetValidatedCatalog();
+            if (!ok)
             {
-                catalogLabel.Text = "No catalogs configured";
+                catalogLabel.Text = "Catalog mismatch - check Settings";
+                statusStripLabel.Text = errorMsg ?? "Catalog configuration error";
+                spinningSyncIcon.State = ApertureIconState.Error;
                 return;
             }
+            if (string.IsNullOrEmpty(catalogName))
+            {
+                catalogLabel.Text = string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder)
+                    ? "No catalogs configured"
+                    : "No catalogs found";
+                spinningSyncIcon.State = ApertureIconState.DimIdle;
+                return;
+            }
+            catalogLabel.Text = "Syncing: " + catalogName;
+        }
+
+        /// <summary>Validates exactly one catalog in local and network. Returns (ok, catalogName, errorMessage).</summary>
+        private (bool ok, string? catalogName, string? errorMessage) TryGetValidatedCatalog()
+        {
+            var localNames = GetCatalogNamesFromLocalFolder();
+            var networkNames = GetCatalogNamesFromNetworkFolder();
+
+            if (localNames.Length == 0)
+                return (true, null, null);
+            if (localNames.Length > 1)
+                return (false, null, "Multiple catalogs in Local Folder; use exactly one.");
+            if (networkNames.Length > 1)
+                return (false, null, "Multiple catalogs on network; use exactly one.");
+            if (networkNames.Length == 1 && !string.Equals(localNames[0], networkNames[0], StringComparison.OrdinalIgnoreCase))
+                return (false, null, $"Catalog name mismatch: local \"{localNames[0]}\" vs network \"{networkNames[0]}\"");
+            return (true, localNames[0], null);
+        }
+
+        private string[] GetCatalogNamesFromLocalFolder()
+        {
+            if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
+                return Array.Empty<string>();
             var files = Directory.GetFiles(config.LocalFolder, "*.lrcat");
-            var names = files.Select(f => Path.GetFileNameWithoutExtension(f)).ToArray();
-            catalogLabel.Text = names.Length == 0 ? "No catalogs found" : "Syncing: " + string.Join(", ", names);
+            return files.Select(f => Path.GetFileNameWithoutExtension(f)).Distinct().ToArray();
+        }
+
+        private string[] GetCatalogNamesFromNetworkFolder()
+        {
+            if (string.IsNullOrWhiteSpace(config.NetworkFolder) || !Directory.Exists(config.NetworkFolder))
+                return Array.Empty<string>();
+            try
+            {
+                var zips = Directory.GetFiles(config.NetworkFolder, "*.zip");
+                var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var zip in zips)
+                {
+                    var fname = Path.GetFileNameWithoutExtension(zip);
+                    var dashIdx = fname.IndexOf(" - ", StringComparison.Ordinal);
+                    if (dashIdx > 0)
+                    {
+                        var catName = fname.Substring(0, dashIdx).Trim();
+                        if (!string.IsNullOrEmpty(catName))
+                            names.Add(catName);
+                    }
+                }
+                return names.ToArray();
+            }
+            catch { return Array.Empty<string>(); }
         }
 
         private void TryUpdateLastSyncFromStatusFile()
@@ -813,6 +880,13 @@ namespace LightroomSync
             }
             else if (Status.LightroomIsOpen() == false && hasDealtWithLightroomOpen == false)
             {
+                RefreshCatalogDisplay();
+                if (spinningSyncIcon.State == ApertureIconState.Error)
+                {
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
+                }
                 SetStatus("Syncing");
                 if (statusStripLabel.Text != "Successfully uploaded")
                     SetStatusStrip("Checking for updates...", ApertureIconState.Idle);
@@ -828,7 +902,8 @@ namespace LightroomSync
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(config.LocalFolder) || !Directory.Exists(config.LocalFolder))
+                var (dlOk, catalogName, _) = TryGetValidatedCatalog();
+                if (!dlOk || string.IsNullOrEmpty(catalogName))
                 {
                     SetStatus("Syncing");
                     if (statusStripLabel.Text != "Successfully uploaded")
@@ -838,152 +913,177 @@ namespace LightroomSync
                     return;
                 }
 
-                string[] files = Directory.GetFiles(config.LocalFolder, "*.lrcat");
-                string[] timestamped = new string[files.Length];
-                for (int i = 0; i < files.Length; i++)
+                string filePath = Path.Combine(config.LocalFolder, catalogName + ".lrcat");
+                if (!File.Exists(filePath))
                 {
-                    string catName = Path.GetFileNameWithoutExtension(files[i]);
-                    DateTime lastModified = File.GetLastWriteTime(files[i]);
-                    timestamped[i] = catName + " - " + lastModified.ToString("yyyy-MM-dd HH-mm") + ".zip";
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
+                }
+                DateTime lastModified = File.GetLastWriteTime(filePath);
+                string ourTimestamped = catalogName + " - " + lastModified.ToString("yyyy-MM-dd HH-mm") + ".zip";
+
+                var ourCatalogEntries = loadedStatus.MostRecentVersions
+                    .Where(s => s.StartsWith(catalogName + " - ", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (ourCatalogEntries.Count == 0)
+                {
+                    SetStatus("Syncing");
+                    if (statusStripLabel.Text != "Successfully uploaded")
+                        SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
                 }
 
-                foreach (string catalog in loadedStatus.MostRecentVersions)
+                string mostRecentOnNetwork = ourCatalogEntries.OrderByDescending(s => s).First();
+                if (mostRecentOnNetwork == ourTimestamped)
                 {
-                    if (!timestamped.Contains(catalog))
+                    SetStatus("Syncing");
+                    if (statusStripLabel.Text != "Successfully uploaded")
+                        SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
+                }
+
+                string catalog = mostRecentOnNetwork;
+                string catName = catalogName;
+                string file1 = Path.Combine(config.LocalFolder, catName + ".lrcat");
+                string dir1 = Path.Combine(config.LocalFolder, catName + ".lrcat-data");
+                string dir2 = Path.Combine(config.LocalFolder, catName + " Helper.lrdata");
+
+                SetStatusStrip("Newer catalog available", ApertureIconState.Warning);
+
+                var choice = BackupOrDiscardChoice.Discard;
+                if (File.Exists(file1) || Directory.Exists(dir1) || Directory.Exists(dir2))
+                {
+                    var backupDialog = new BackupOrDiscardDialog(catName);
+                    backupDialog.ShowDialog(this);
+                    choice = backupDialog.Choice;
+                }
+
+                if (choice == BackupOrDiscardChoice.Cancel)
+                {
+                    Log($"Update skipped for {catName}.");
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
+                }
+
+                if (choice == BackupOrDiscardChoice.Backup && !string.IsNullOrWhiteSpace(config.BackupFolder))
+                {
+                    try
                     {
-                        //We do not have the most recent version.
-                        string catName = catalog.Substring(0, catalog.Length - 23); //23 is len(" - yyyy-MM-dd HH-mm.zip")
-                        string file1 = Path.Combine(config.LocalFolder, catName + ".lrcat");
-                        string dir1 = Path.Combine(config.LocalFolder, catName + ".lrcat-data");
-                        string dir2 = Path.Combine(config.LocalFolder, catName + " Helper.lrdata");
-
-                        SetStatusStrip("Newer catalog available", ApertureIconState.Warning);
-
-                        // Only ask Backup/Discard if we have an existing catalog to replace
-                        var choice = BackupOrDiscardChoice.Discard;
-                        if (File.Exists(file1) || Directory.Exists(dir1) || Directory.Exists(dir2))
+                        Directory.CreateDirectory(config.BackupFolder);
+                        string backupZipPath = Path.Combine(config.BackupFolder, catName + "_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip");
+                        await Task.Run(() =>
                         {
-                            var backupDialog = new BackupOrDiscardDialog(catName);
-                            backupDialog.ShowDialog(this);
-                            choice = backupDialog.Choice;
-                        }
-
-                        if (choice == BackupOrDiscardChoice.Cancel)
-                        {
-                            Log($"Update skipped for {catName}.");
-                            continue;
-                        }
-
-                        if (choice == BackupOrDiscardChoice.Backup && !string.IsNullOrWhiteSpace(config.BackupFolder))
-                        {
-                            try
+                            using (var zipArchive = ZipFile.Open(backupZipPath, ZipArchiveMode.Create))
                             {
-                                Directory.CreateDirectory(config.BackupFolder);
-                                string backupZipPath = Path.Combine(config.BackupFolder, catName + "_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".zip");
-                                await Task.Run(() =>
-                                {
-                                    using (var zipArchive = ZipFile.Open(backupZipPath, ZipArchiveMode.Create))
-                                    {
-                                        if (File.Exists(file1))
-                                            zipArchive.CreateEntryFromFile(file1, catName + ".lrcat");
-                                        if (Directory.Exists(dir1))
-                                            AddDirectoryToZip(zipArchive, dir1, catName + ".lrcat-data");
-                                        if (Directory.Exists(dir2))
-                                            AddDirectoryToZip(zipArchive, dir2, catName + " Helper.lrdata");
-                                    }
-                                });
-                                Log($"Backed up {catName} before replacing.");
+                                if (File.Exists(file1))
+                                    zipArchive.CreateEntryFromFile(file1, catName + ".lrcat");
+                                if (Directory.Exists(dir1))
+                                    AddDirectoryToZip(zipArchive, dir1, catName + ".lrcat-data");
+                                if (Directory.Exists(dir2))
+                                    AddDirectoryToZip(zipArchive, dir2, catName + " Helper.lrdata");
                             }
-                            catch (Exception ex)
-                            {
-                                Log("ERROR backing up catalog: " + ex.Message + " - Aborting update.");
-                                SetStatus("Syncing");
-                                SetStatusStrip("Backup failed: " + ex.Message, ApertureIconState.Error);
-                                timer1.Enabled = true;
-                                timerBeingHandled = false;
-                                return;
-                            }
-                        }
-                        else if (choice == BackupOrDiscardChoice.Backup && string.IsNullOrWhiteSpace(config.BackupFolder))
-                        {
-                            Log("Backup folder not set. Please set Backup Folder and try again. Aborting update.");
-                            SetStatus("Syncing");
-                            if (statusStripLabel.Text != "Successfully uploaded")
-                                SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
-                            timer1.Enabled = true;
-                            timerBeingHandled = false;
-                            return;
-                        }
-
-                        SetStatus("Downloading " + catName + "...");
-                        SetStatusStrip($"Downloading {catName}...", ApertureIconState.Active);
-                        Log($"Newer version of {catName} found. Downloading...");
-                        try
-                        {
-                            await Task.Run(() => { File.Copy(Path.Combine(config.NetworkFolder, catalog), catalog); });
-                            Log($"Downloaded. Replacing local {catName}...");
-
-                            try
-                            {
-                                if (File.Exists(file1)) File.Delete(file1);
-                                if (Directory.Exists(dir1)) Directory.Delete(dir1, recursive: true);
-                                if (Directory.Exists(dir2)) Directory.Delete(dir2, recursive: true);
-                            }
-                            catch (IOException ex)
-                            {
-                                Log("An I/O error occurred: " + ex.Message);
-                                Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
-                                return;
-                            }
-                            catch (UnauthorizedAccessException ex)
-                            {
-                                Log("Unauthorized access error occurred: " + ex.Message);
-                                Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
-                                return;
-                            }
-                            catch (Exception ex)
-                            {
-                                Log("An error occurred: " + ex.Message);
-                                Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
-                                return;
-                            }
-
-                            Log("Extracting...");
-                            try
-                            {
-                                string zipPath = catalog;
-                                await Task.Run(() =>
-                                {
-                                    ZipFile.ExtractToDirectory(zipPath, config.LocalFolder);
-                                });
-                                // Set extracted .lrcat's LastWriteTime to match the zip's timestamp,
-                                // so the next sync check sees us as in-sync (avoids infinite loop)
-                                string timestampStr = catalog.Substring(catalog.Length - 20, 16); // "yyyy-MM-dd HH-mm"
-                                if (DateTime.TryParseExact(timestampStr, "yyyy-MM-dd HH-mm", null, System.Globalization.DateTimeStyles.None, out DateTime zipTimestamp)
-                                    && File.Exists(file1))
-                                {
-                                    File.SetLastWriteTime(file1, zipTimestamp);
-                                }
-                                Log("Extraction complete.");
-                            }
-                            catch (Exception ex)
-                            {
-                                Log("An error occurred while unzipping the file: " + ex.Message);
-                                Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
-                            }
-
-                            //You know what? If this file I just created has errors in deleting, I want someone to go file a bug report.
-                            //That's absurd, and I'm not adding another wall of error handling around it.
-                            File.Delete(catalog);
-                            config.LastSyncTime = DateTime.Now;
-                            RefreshLastSyncDisplay();
-                            Log($"Downloaded and applied {catName}.");
-                        }
-                        catch (IOException ex)
-                        {
-                            Log("Error copying: " + ex.Message);
-                        }
+                        });
+                        Log($"Backed up {catName} before replacing.");
                     }
+                    catch (Exception ex)
+                    {
+                        Log("ERROR backing up catalog: " + ex.Message + " - Aborting update.");
+                        SetStatus("Syncing");
+                        SetStatusStrip("Backup failed: " + ex.Message, ApertureIconState.Error);
+                        timer1.Enabled = true;
+                        timerBeingHandled = false;
+                        return;
+                    }
+                }
+                else if (choice == BackupOrDiscardChoice.Backup && string.IsNullOrWhiteSpace(config.BackupFolder))
+                {
+                    Log("Backup folder not set. Please set Backup Folder and try again. Aborting update.");
+                    SetStatus("Syncing");
+                    if (statusStripLabel.Text != "Successfully uploaded")
+                        SetStatusStrip("Watching for changes...", ApertureIconState.Idle);
+                    timer1.Enabled = true;
+                    timerBeingHandled = false;
+                    return;
+                }
+
+                SetStatus("Downloading " + catName + "...");
+                SetStatusStrip($"Downloading {catName}...", ApertureIconState.Active);
+                Log($"Newer version of {catName} found. Downloading...");
+                try
+                {
+                    await Task.Run(() => { File.Copy(Path.Combine(config.NetworkFolder, catalog), catalog); });
+                    Log($"Downloaded. Replacing local {catName}...");
+
+                    try
+                    {
+                        if (File.Exists(file1)) File.Delete(file1);
+                        if (Directory.Exists(dir1)) Directory.Delete(dir1, recursive: true);
+                        if (Directory.Exists(dir2)) Directory.Delete(dir2, recursive: true);
+                    }
+                    catch (IOException ex)
+                    {
+                        Log("An I/O error occurred: " + ex.Message);
+                        Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
+                        timer1.Enabled = true;
+                        timerBeingHandled = false;
+                        return;
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Log("Unauthorized access error occurred: " + ex.Message);
+                        Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
+                        timer1.Enabled = true;
+                        timerBeingHandled = false;
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("An error occurred: " + ex.Message);
+                        Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
+                        timer1.Enabled = true;
+                        timerBeingHandled = false;
+                        return;
+                    }
+
+                    Log("Extracting...");
+                    try
+                    {
+                        string zipPath = catalog;
+                        await Task.Run(() =>
+                        {
+                            ZipFile.ExtractToDirectory(zipPath, config.LocalFolder);
+                        });
+                        string timestampStr = catalog.Substring(catalog.Length - 20, 16);
+                        if (DateTime.TryParseExact(timestampStr, "yyyy-MM-dd HH-mm", null, System.Globalization.DateTimeStyles.None, out DateTime zipTimestamp)
+                            && File.Exists(file1))
+                        {
+                            File.SetLastWriteTime(file1, zipTimestamp);
+                        }
+                        Log("Extraction complete.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("An error occurred while unzipping the file: " + ex.Message);
+                        Log("YOU SHOULD MANUALLY EXTRACT THE ZIP TO RECOVER YOUR CATALOG");
+                        timer1.Enabled = true;
+                        timerBeingHandled = false;
+                        return;
+                    }
+
+                    try { File.Delete(catalog); } catch { /* best-effort cleanup */ }
+                    config.LastSyncTime = DateTime.Now;
+                    RefreshLastSyncDisplay();
+                    Log($"Downloaded and applied {catName}.");
+                        }
+                catch (IOException ex)
+                {
+                    Log("Error copying: " + ex.Message);
                 }
 
                 SetStatus("Syncing");
