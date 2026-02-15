@@ -22,6 +22,9 @@ namespace LightroomSync
         /// <summary>Folder for log files. Empty = sync folder\Logs.</summary>
         public string LogFolder { get; set; } = "";
 
+        /// <summary>Path to Lightroom Classic exe. Empty = search default install locations.</summary>
+        public string LightroomExePath { get; set; } = "";
+
         /// <summary>If true, show the activity log panel. Default false.</summary>
         public bool ShowActivityLog { get; set; } = false;
 

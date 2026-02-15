@@ -171,9 +171,39 @@ namespace LightroomSync
             btnBrowseLogFolder.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnBrowseLogFolder.Click += btnBrowseLogFolder_Click;
 
+            // Lightroom exe (optional)
+            lblLightroomPath = new Label();
+            lblLightroomPath.Text = "Lightroom Classic exe (optional; for Launch LR button)";
+            lblLightroomPath.ForeColor = textMuted;
+            lblLightroomPath.Font = new Font("Segoe UI", 9F);
+            lblLightroomPath.Location = new Point(spacing, 344);
+            lblLightroomPath.AutoSize = true;
+
+            txtLightroomPath = new TextBox();
+            txtLightroomPath.BackColor = inputBg;
+            txtLightroomPath.ForeColor = textPrimary;
+            txtLightroomPath.BorderStyle = BorderStyle.FixedSingle;
+            txtLightroomPath.Font = new Font("Consolas", 9.5F);
+            txtLightroomPath.Location = new Point(spacing, 368);
+            txtLightroomPath.Size = new Size(420, 28);
+            txtLightroomPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            txtLightroomPath.TextChanged += txtLightroomPath_TextChanged;
+
+            btnBrowseLightroom = new Button();
+            btnBrowseLightroom.Text = "Browse";
+            btnBrowseLightroom.FlatStyle = FlatStyle.Flat;
+            btnBrowseLightroom.BackColor = inputBg;
+            btnBrowseLightroom.ForeColor = textPrimary;
+            btnBrowseLightroom.Font = new Font("Segoe UI", 9F);
+            btnBrowseLightroom.FlatAppearance.BorderColor = inputBorder;
+            btnBrowseLightroom.Location = new Point(448, 366);
+            btnBrowseLightroom.Size = new Size(80, 30);
+            btnBrowseLightroom.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnBrowseLightroom.Click += btnBrowseLightroom_Click;
+
             // Buttons
             btnSave.Size = new Size(100, 36);
-            btnSave.Location = new Point(348, 348);
+            btnSave.Location = new Point(348, 412);
             btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnSave.Click += btnSave_Click;
 
@@ -184,7 +214,7 @@ namespace LightroomSync
             btnCancel.Font = new Font("Segoe UI", 9.5F);
             btnCancel.FlatAppearance.BorderColor = inputBorder;
             btnCancel.Size = new Size(100, 36);
-            btnCancel.Location = new Point(238, 348);
+            btnCancel.Location = new Point(238, 412);
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCancel.Click += btnCancel_Click;
 
@@ -192,7 +222,7 @@ namespace LightroomSync
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = bgDark;
-            ClientSize = new Size(548, 405);
+            ClientSize = new Size(548, 469);
             Controls.Add(lblLocalFolder);
             Controls.Add(txtLocalFolder);
             Controls.Add(btnBrowseLocal);
@@ -207,6 +237,9 @@ namespace LightroomSync
             Controls.Add(lblLogFolder);
             Controls.Add(txtLogFolder);
             Controls.Add(btnBrowseLogFolder);
+            Controls.Add(lblLightroomPath);
+            Controls.Add(txtLightroomPath);
+            Controls.Add(btnBrowseLightroom);
             Controls.Add(btnSave);
             Controls.Add(btnCancel);
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -234,6 +267,9 @@ namespace LightroomSync
         private Label lblLogFolder;
         private TextBox txtLogFolder;
         private Button btnBrowseLogFolder;
+        private Label lblLightroomPath;
+        private TextBox txtLightroomPath;
+        private Button btnBrowseLightroom;
         private Button btnSave;
         private Button btnCancel;
     }

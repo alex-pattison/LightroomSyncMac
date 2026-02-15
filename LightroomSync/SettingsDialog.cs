@@ -36,6 +36,8 @@ namespace LightroomSync
             else
                 txtLogFolder.Text = config.LogFolder ?? "";
             UpdateLogFolderControls();
+
+            txtLightroomPath.Text = config.LightroomExePath ?? "";
         }
 
         private void UpdateBackupControls()
@@ -113,6 +115,28 @@ namespace LightroomSync
             PickFolder(txtBackupFolder);
         }
 
+        private void txtLightroomPath_TextChanged(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtLightroomPath.Text) || File.Exists(txtLightroomPath.Text.Trim()))
+                txtLightroomPath.BackColor = Color.FromArgb(43, 43, 48);
+            else
+                txtLightroomPath.BackColor = Color.FromArgb(80, 45, 45);
+        }
+
+        private void btnBrowseLightroom_Click(object sender, EventArgs e)
+        {
+            using var dlg = new OpenFileDialog
+            {
+                Title = "Select Lightroom Classic executable",
+                Filter = "Executable (*.exe)|*.exe|All files (*.*)|*.*",
+                FileName = "Adobe Lightroom Classic.exe"
+            };
+            if (dlg.ShowDialog() == DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.FileName))
+            {
+                txtLightroomPath.Text = dlg.FileName;
+            }
+        }
+
         private static bool PickFolder(TextBox target)
         {
             using var dlg = new FolderBrowserDialog();
@@ -149,6 +173,7 @@ namespace LightroomSync
             _config.NetworkFolder = txtSyncFolder.Text.Trim();
             _config.BackupFolder = chkUseDefaultBackup.Checked ? DefaultBackupPath : txtBackupFolder.Text.Trim();
             _config.LogFolder = chkUseDefaultLogFolder.Checked ? "" : txtLogFolder.Text.Trim();
+            _config.LightroomExePath = txtLightroomPath.Text.Trim();
 
             DialogResult = DialogResult.OK;
             Close();

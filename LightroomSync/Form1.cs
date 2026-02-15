@@ -460,7 +460,138 @@ namespace LightroomSync
 
         private void buttonLaunchLightroom_Click(object? sender, EventArgs e)
         {
-            // TODO: Launch Lightroom functionality
+            if (Status.LightroomIsOpen())
+            {
+                SetStatusStrip("Lightroom is already open", ApertureIconState.LightroomOpen);
+                return;
+            }
+            try
+            {
+                var (ok, catalogName, _) = TryGetValidatedCatalog();
+                if (ok && !string.IsNullOrEmpty(catalogName))
+                {
+                    string catPath = Path.Combine(config.LocalFolder, catalogName + ".lrcat");
+                    if (File.Exists(catPath))
+                    {
+                        Process.Start(new ProcessStartInfo { FileName = catPath, UseShellExecute = true });
+                        SetStatusStripBrieflyThenRevert("Launching Lightroom...");
+                        Log("Opened catalog with default app (double-click behavior)");
+                        return;
+                    }
+                }
+                string? lrPath = FindLightroomExe();
+                if (!string.IsNullOrEmpty(lrPath))
+                {
+                    Process.Start(new ProcessStartInfo { FileName = lrPath, UseShellExecute = true });
+                    SetStatusStripBrieflyThenRevert("Launching Lightroom...");
+                    Log("Launched Lightroom");
+                    return;
+                }
+                SetStatusStrip("Error: Couldn't launch Lightroom", ApertureIconState.Error);
+                Log("No catalog to open and Lightroom exe not found. Configure paths in Settings.");
+            }
+            catch (Exception ex)
+            {
+                Log("Error launching Lightroom: " + ex.Message);
+                SetStatusStrip("Error: Couldn't launch Lightroom", ApertureIconState.Error);
+            }
+        }
+
+        private string? FindLightroomExe()
+        {
+            if (!string.IsNullOrWhiteSpace(config.LightroomExePath) && File.Exists(config.LightroomExePath.Trim()))
+                return config.LightroomExePath.Trim();
+
+            // 1. Registry: App Paths (used by ShellExecute when launching by name)
+            try
+            {
+                using var appPaths = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Adobe Lightroom Classic.exe");
+                var path = appPaths?.GetValue(null) as string;
+                if (!string.IsNullOrEmpty(path) && File.Exists(path)) return path;
+            }
+            catch { /* registry access may fail */ }
+
+            // 2. Registry: Uninstall keys (InstallLocation + exe, or DisplayIcon)
+            try
+            {
+                foreach (var baseKey in new[] { Registry.LocalMachine, Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node") })
+                {
+                    if (baseKey == null) continue;
+                    using var uninstall = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*");
+                    if (uninstall == null) continue; // * doesn't work for OpenSubKey - we need to enumerate
+                }
+                using (var uninstallRoot = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"))
+                {
+                    if (uninstallRoot != null)
+                        foreach (var subKeyName in uninstallRoot.GetSubKeyNames())
+                        {
+                            using var sub = uninstallRoot.OpenSubKey(subKeyName);
+                            var displayName = sub?.GetValue("DisplayName") as string;
+                            if (string.IsNullOrEmpty(displayName) || !displayName.Contains("Lightroom Classic", StringComparison.OrdinalIgnoreCase)) continue;
+                            var icon = sub?.GetValue("DisplayIcon") as string;
+                            if (!string.IsNullOrEmpty(icon))
+                            {
+                                var exePath = icon.Split(',')[0].Trim();
+                                if (exePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(exePath)) return exePath;
+                            }
+                            var installLoc = sub?.GetValue("InstallLocation") as string;
+                            if (!string.IsNullOrEmpty(installLoc))
+                            {
+                                var exePath = Path.Combine(installLoc.Trim(), "Adobe Lightroom Classic.exe");
+                                if (File.Exists(exePath)) return exePath;
+                            }
+                        }
+                }
+                using (var uninstallRoot = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"))
+                {
+                    if (uninstallRoot != null)
+                        foreach (var subKeyName in uninstallRoot.GetSubKeyNames())
+                        {
+                            using var sub = uninstallRoot.OpenSubKey(subKeyName);
+                            var displayName = sub?.GetValue("DisplayName") as string;
+                            if (string.IsNullOrEmpty(displayName) || !displayName.Contains("Lightroom Classic", StringComparison.OrdinalIgnoreCase)) continue;
+                            var icon = sub?.GetValue("DisplayIcon") as string;
+                            if (!string.IsNullOrEmpty(icon))
+                            {
+                                var exePath = icon.Split(',')[0].Trim();
+                                if (exePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(exePath)) return exePath;
+                            }
+                            var installLoc = sub?.GetValue("InstallLocation") as string;
+                            if (!string.IsNullOrEmpty(installLoc))
+                            {
+                                var exePath = Path.Combine(installLoc.Trim(), "Adobe Lightroom Classic.exe");
+                                if (File.Exists(exePath)) return exePath;
+                            }
+                        }
+                }
+            }
+            catch { }
+
+            // 3. Scan Adobe folder for Lightroom Classic (handles "Adobe Lightroom Classic 2024" etc.)
+            try
+            {
+                foreach (var adobeRoot in new[] {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Adobe"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Adobe") })
+                {
+                    if (!Directory.Exists(adobeRoot)) continue;
+                    foreach (var dir in Directory.GetDirectories(adobeRoot))
+                    {
+                        if (!Path.GetFileName(dir).Contains("Lightroom Classic", StringComparison.OrdinalIgnoreCase)) continue;
+                        var exe = Path.Combine(dir, "Adobe Lightroom Classic.exe");
+                        if (File.Exists(exe)) return exe;
+                    }
+                }
+            }
+            catch { }
+
+            // 4. Default paths (exact folder name)
+            var defaults = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Adobe", "Adobe Lightroom Classic", "Adobe Lightroom Classic.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Adobe", "Adobe Lightroom Classic", "Adobe Lightroom Classic.exe")
+            };
+            return defaults.FirstOrDefault(File.Exists);
         }
 
         private void buttonStartSync_Click(object sender, EventArgs e)
@@ -635,6 +766,21 @@ namespace LightroomSync
         private DateTime _statusStripActiveTime;
         private System.Windows.Forms.Timer? _statusStripDelayTimer;
 
+        private void SetStatusStripBrieflyThenRevert(string message)
+        {
+            SetStatusStrip(message, ApertureIconState.Active);
+            var t = new System.Windows.Forms.Timer { Interval = 2000 };
+            t.Tick += (s, _) =>
+            {
+                t.Stop();
+                t.Dispose();
+                if (IsDisposed) return;
+                SetStatusStrip(Status.LightroomIsOpen() ? "Lightroom Open" : "Watching for changes...",
+                    Status.LightroomIsOpen() ? ApertureIconState.LightroomOpen : ApertureIconState.Idle);
+            };
+            t.Start();
+        }
+
         private void SetStatusStrip(string text, ApertureIconState state)
         {
             if (InvokeRequired) { Invoke(() => SetStatusStrip(text, state)); return; }
@@ -730,7 +876,7 @@ namespace LightroomSync
         private void testIconDimToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.DimIdle, "Ready");
         private void testIconIdleToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Idle, "Watching for changes...");
         private void testIconSpinningToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Active, "Syncing...");
-        private void testIconLightroomOpenToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.LightroomOpen, "Waiting for Lightroom to close...");
+        private void testIconLightroomOpenToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.LightroomOpen, "Lightroom Open");
         private void testIconUpdateAvailableToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Warning, "Newer catalog available");
         private void testIconErrorToolStripMenuItem_Click(object? sender, EventArgs e) => testIconStateToolStripMenuItem_Click(ApertureIconState.Error, "Catalog mismatch");
 
@@ -841,8 +987,8 @@ namespace LightroomSync
 
             if (Status.LightroomIsOpen() && hasDealtWithLightroomOpen == false)
             {
-                SetStatus("Waiting for Lightroom to close...");
-                SetStatusStrip("Waiting for Lightroom to close...", ApertureIconState.LightroomOpen);
+                SetStatus("Lightroom Open");
+                SetStatusStrip("Lightroom Open", ApertureIconState.LightroomOpen);
                 timer1.Enabled = false;
 
                 Status? loadedStatus = getNetworkStatus();
@@ -884,7 +1030,7 @@ namespace LightroomSync
                 status.LastUser = Environment.MachineName;
                 await UpdateStatusFileOnNetwork();
                 SetStatus("Syncing");
-                SetStatusStrip("Waiting for Lightroom to close...", ApertureIconState.LightroomOpen);
+                SetStatusStrip("Lightroom Open", ApertureIconState.LightroomOpen);
                 timer1.Enabled = true;
                 timerBeingHandled = false;
             }
