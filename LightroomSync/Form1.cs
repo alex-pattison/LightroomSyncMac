@@ -1306,7 +1306,7 @@ namespace LightroomSync
             var appName = Utils.IsDevMode ? "Lightroom Sync+ DEV" : "Lightroom Sync+ Beta";
             MessageBox.Show(
                 appName + Environment.NewLine +
-                "Fork of LightroomSync by Anthony Bryan." + Environment.NewLine +
+                "By Alex Pattison. Fork of LightroomSync by Anthony Bryan." + Environment.NewLine +
                 Environment.NewLine +
                 "Version " + CurrentVersion + Environment.NewLine +
                 "https://github.com/alex-pattison/LightroomSyncPlus",
